@@ -1,0 +1,3 @@
+http_proxy=socks5://127.0.0.1:9050
+https_proxy=socks5://127.0.0.1:9050
+QT_QPA_PLATFORMTHEME=qt5ct

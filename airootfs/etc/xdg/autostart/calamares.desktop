@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Install Kitest OS
+Comment=Launch Calamares installer
+Exec=calamares
+Icon=calamares
+Terminal=false
+Categories=Qt;System;

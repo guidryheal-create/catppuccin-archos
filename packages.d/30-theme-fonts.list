@@ -1,0 +1,17 @@
+# Theming + fonts + minimal shell extras for live session.
+papirus-icon-theme
+kvantum
+kvantum-theme-materia
+qt5ct
+qt6ct
+ttf-dejavu
+ttf-liberation
+noto-fonts
+noto-fonts-emoji
+starship
+fastfetch
+flatpak
+xdg-desktop-portal
+xdg-desktop-portal-kde
+xdg-desktop-portal-gtk
+htop

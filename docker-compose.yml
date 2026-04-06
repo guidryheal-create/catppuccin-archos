@@ -1,0 +1,67 @@
+# Kitest ISO build — mkarchiso needs --privileged (pacstrap / arch-chroot mounts).
+# Usage:
+#   mkdir -p out
+#   docker compose run --rm build-iso
+#
+# Interactive Arch shell (archiso + profile mounted read-write):
+#   docker compose --profile dev run --rm dev-shell
+
+name: kitest
+
+services:
+  build-iso:
+    image: docker.io/library/archlinux:latest
+    privileged: true
+    volumes:
+      - ./:/profile
+      - ./out:/var/tmp/kitest-out
+      - kitest-pacman-cache:/var/cache/pacman/pkg
+    environment:
+      OUT_DIR: /var/tmp/kitest-out
+      WORK_DIR: /var/tmp/kitest-work
+    working_dir: /profile
+    command:
+      - bash
+      - -lc
+      - |
+        set -euo pipefail
+        pacman -Sy --needed --noconfirm archiso arch-install-scripts ca-certificates
+        ./build-iso.sh
+
+  dev-shell:
+    profiles:
+      - dev
+    image: docker.io/library/archlinux:latest
+    privileged: true
+    volumes:
+      - ./:/profile
+      - kitest-pacman-cache:/var/cache/pacman/pkg
+    working_dir: /profile
+    stdin_open: true
+    tty: true
+    command:
+      - bash
+      - -lc
+      - |
+        pacman -Sy --needed --noconfirm archiso arch-install-scripts ca-certificates less vim git
+        exec bash -l
+
+
+#  qemu:
+#    image: qemux/qemu
+#    container_name: qemu
+#    devices:
+#      - /dev/kvm
+#      - /dev/net/tun
+#    cap_add:
+#      - NET_ADMIN
+#    ports:
+#      - 8006:8006
+#    volumes:
+#      - ./out/kitest-2026.04.06-x86_64.iso:/boot.iso
+#      - ./qemu:/storage
+#    restart: always
+#    stop_grace_period: 2m
+
+volumes:
+  kitest-pacman-cache:

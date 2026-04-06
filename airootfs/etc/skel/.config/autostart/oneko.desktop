@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=oneko
+Comment=Pointer-chasing cat (Flatpak; works on Wayland)
+Exec=/usr/bin/flatpak run com.daidouji.oneko
+Terminal=false
+Categories=Game;
+X-GNOME-Autostart-enabled=true

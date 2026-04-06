@@ -1,0 +1,7 @@
+# Enough Mesa/Vulkan for typical AMD/Intel live sessions (NVIDIA → Calamares netinstall).
+mesa
+xf86-video-amdgpu
+xf86-video-intel
+vulkan-radeon
+vulkan-intel
+vulkan-icd-loader

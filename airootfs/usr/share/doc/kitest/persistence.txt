@@ -1,0 +1,33 @@
+Kitest OS — persistent live session (USB)
+========================================
+
+To keep changes across reboots, the overlay must be stored on a writable
+partition. See mkinitcpio-archiso boot parameters:
+https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio-archiso/-/blob/master/docs/README.bootparams
+
+Quick setup (USB stick)
+-----------------------
+
+1. Write the ISO to the stick (first partition is the ISO / FAT volume).
+
+2. Add a second partition on the same drive (e.g. ext4).
+
+3. Set the filesystem label to exactly:
+
+     KITEST_PERSIST
+
+4. Boot the menu entry:
+
+     "Kitest — persistent live (USB, …)"
+
+   (BIOS: Syslinux menu / UEFI: systemd-boot second entry.)
+
+5. Session changes are stored on the KITEST_PERSIST partition (cow_directory
+   defaults under /persistent_<ISO label>/ on that device).
+
+Notes
+-----
+
+- Persistence is for USB (or another block device with a labeled partition).
+- DVD / read-only media cannot persist overlay data.
+- You can tune RAM overlay size with the kernel option cow_spacesize= (see Arch Wiki Archiso).

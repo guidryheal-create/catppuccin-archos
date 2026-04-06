@@ -1,0 +1,60 @@
+---
+name: Build ISO
+
+'on':
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - 'packages.x86_64'
+      - 'packages.d/**'
+      - 'build-iso.sh'
+      - 'bootstrap_packages'
+      - 'pacman.conf'
+      - 'profiledef.sh'
+      - 'airootfs/**'
+      - '.github/workflows/build-archiso.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  mkarchiso:
+    name: mkarchiso (Arch container)
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+      # pacstrap/arch-chroot mount proc/sys/dev inside the rootfs; default caps block that.
+      options: --privileged
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install archiso and keys
+        run: |
+          pacman-key --init
+          pacman-key --populate archlinux
+          pacman -Sy --needed --noconfirm archiso arch-install-scripts git
+
+      - name: Merge packages.d into packages.x86_64
+        run: |
+          set -euo pipefail
+          {
+            printf '%s\n' '# Generated from packages.d/*.list — edit fragments, not this file.'
+            cat "${GITHUB_WORKSPACE}"/packages.d/*.list
+          } | sed '/^[[:blank:]]*#/d;s/#.*//;/^[[:blank:]]*$/d' > "${GITHUB_WORKSPACE}/packages.x86_64"
+
+      - name: Build profile
+        run: |
+          rm -rf /tmp/kitest-work
+          mkdir -p /tmp/kitest-out
+          mkarchiso -v -w /tmp/kitest-work -o /tmp/kitest-out "${GITHUB_WORKSPACE}"
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: kitest-iso
+          path: /tmp/kitest-out/*.iso
+          if-no-files-found: error

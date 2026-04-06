@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Awesome Security (resource list)
+Comment=Curated security tools and docs (GitHub)
+Exec=xdg-open https://github.com/sbilly/awesome-security
+Icon=preferences-system-security
+Terminal=false
+Categories=Qt;Security;

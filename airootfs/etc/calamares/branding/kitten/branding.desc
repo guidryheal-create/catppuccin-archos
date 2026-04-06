@@ -1,0 +1,10 @@
+---
+componentName: kitten
+
+strings:
+  productName: "Kitest OS"
+  shortProductName: "Kitest"
+  version: "rolling"
+  productUrl: "https://archlinux.org"
+  supportUrl: "https://wiki.archlinux.org"
+  releaseNotesUrl: "https://wiki.archlinux.org"

@@ -1,0 +1,11 @@
+# Plasma desktop + session (meta + explicit apps; avoid pacman *groups*).
+plasma-meta
+plasma-x11-session
+networkmanager
+sddm
+sddm-kcm
+konsole
+kdialog
+dolphin
+kio-extras
+ffmpegthumbs

@@ -1,0 +1,4 @@
+/out/
+*.iso
+*.img
+/var/tmp/kitest-work/

@@ -1,0 +1,332 @@
+# 🧠 🎯 KITEST → CHOUTOULU OS
+
+## Base Profile TODO (Arch + secure + theme-ready)
+
+---
+
+# 🧱 1. CORE FOUNDATION (must be solid)
+
+### ✅ Base system
+
+* [x] Keep `base`, `linux`, `linux-firmware`
+* [x] Keep microcode:
+
+  * `intel-ucode`
+  * `amd-ucode`
+
+### ✅ Boot support
+
+* [x] `grub` + `efibootmgr`
+* [x] `syslinux` (optional fallback)
+* [x] `refind` (optional advanced users)
+
+### ✅ Filesystems
+
+* [x] `btrfs-progs`
+* [x] `xfsprogs`
+* [x] `ntfs-3g`
+* [x] `exfatprogs`
+
+👉 Goal: **universal compatibility ISO**
+
+---
+
+# 🌐 2. NETWORK (clean + stable)
+
+### ✅ Keep ONLY one stack
+
+* [x] `networkmanager`
+* [x] optional: `iwd`
+
+### ❌ Remove conflicts
+
+* [x] remove `dhcpcd` (not in `packages.x86_64`; profile uses NM + iwd)
+* [ ] remove `wpa_supplicant` (may still be pulled as an optional NM dependency — verify with `pacman -Qi networkmanager`)
+
+* [x] **Live ISO:** `systemd-networkd` masked; `NetworkManager.conf` uses `wifi.backend=iwd` (see `customize_airootfs.sh`, `airootfs/etc/NetworkManager/`).
+
+👉 Goal: **no network bugs on boot**
+
+---
+
+# 🖥️ 3. DESKTOP BASE (neutral but ready)
+
+### ✅ KDE (good default base)
+
+* [x] `plasma`
+* [x] `sddm`
+* [x] `konsole`, `dolphin`
+
+### ✅ Minimal UX tools
+
+* [x] `xdg-utils`
+* [x] `xdg-user-dirs`
+
+👉 Goal:
+
+* usable immediately
+* but still customizable for Choutoulu OS later
+
+---
+
+# 🎨 4. THEME LAYER (Catppuccin-ready, not forced)
+
+Using **Catppuccin**
+
+### ✅ Install support (don’t hard lock)
+
+* [x] `kvantum`
+* [x] `kvantum-theme-materia` (repos); Catppuccin Kvantum/GTK → **AUR** / custom repo if you want that look
+* [x] `papirus-icon-theme`
+
+### ✅ Config files ready
+
+* [x] Kvantum config present (`/etc/skel/.config/Kvantum/` → MateriaDark)
+* [x] GTK config present (`Breeze-Dark` + Papirus in skel)
+* [x] Qt config present (`qt5ct`/`qt6ct` + `QT_QPA_PLATFORMTHEME` in `/etc/environment`)
+
+👉 Goal:
+
+* looks good by default
+* but user can switch theme easily
+
+---
+
+# 🎨 5. LOGIN + SESSION EXPERIENCE
+
+### ✅ SDDM
+
+* [x] autologin → `kitest`
+* [x] default theme set (`breeze` or later Catppuccin) (`sddm-theme-breeze`)
+
+### ✅ Session
+
+* [x] auto-start KDE Plasma
+* [x] no manual login friction
+
+👉 Goal:
+
+> boots like Ubuntu (instant usable desktop)
+
+---
+
+# 🔊 6. HARDWARE SUPPORT (important for real users)
+
+### ✅ GPU
+
+* [x] `mesa`
+* [x] `xf86-video-amdgpu`
+* [x] `xf86-video-intel`
+* [x] `vulkan-*` (`vulkan-radeon`, `vulkan-intel`, loader)
+
+👉 Optional:
+
+* [x] NVIDIA stack — **`nvidia-open`** + `nvidia-utils` / `nvidia-settings` (legacy `nvidia` pkg removed from Arch repos)
+
+---
+
+### ✅ Audio (modern stack)
+
+* [x] `pipewire`
+* [x] `wireplumber`
+
+---
+
+### ✅ Input / devices
+
+* [x] `libinput` (transitive with Plasma/X)
+* [x] `xf86-input-libinput` (transitive with Xorg stack)
+
+---
+
+# 🔐 7. SECURITY BASELINE (clean, not overkill)
+
+### ✅ Core protections
+
+* [x] `apparmor` enabled
+* [x] `firewalld` enabled
+
+### ✅ Malware detection
+
+* [x] **ClamAV**
+* [x] simple scan alias (`avscan`)
+
+### ✅ Optional tools
+
+* [x] **Lynis** (audit, not always installed)
+
+👉 Goal:
+
+* secure by default
+* but not heavy / slow
+
+---
+
+# 🧰 8. USER EXPERIENCE (CLI + DEV)
+
+### ✅ Shell (keep simple)
+
+* [x] bash default
+* [x] optional `zsh` + `starship`
+
+### ✅ Tools
+
+* [x] `fastfetch`
+* [x] `btop`
+* [x] `git`
+* [x] `base-devel`
+
+### ✅ Modern CLI
+
+* [x] `eza`
+* [x] `bat`
+* [x] `ripgrep`
+* [x] `fzf`
+* [x] `zoxide`
+
+### ✅ Kernel hacking (Kitest focus)
+
+* [x] `linux-headers`, `perf`, `gdb`, `strace`, `bc`, `bison`, `flex`, `sparse`, `pahole` (Arch: `pahole` replaces old `dwarves` pkg name)
+
+---
+
+# 📦 9. APP ECOSYSTEM
+
+### ✅ Flatpak
+
+* [x] `flatpak`
+* [x] Flathub enabled
+* [x] **Brave** + **Steam** + **Flatseal** via Flathub (`kitest-desktop-extras.sh`); default HTTP(S) handler → Brave when install succeeds; no native `steam` / **multilib**
+
+### ✅ Desktop / office / games (profile)
+
+* [x] **LibreOffice** (`libreoffice-fresh`)
+* [x] **Steam** (Flatpak `com.valvesoftware.Steam`)
+* [x] **oneko** — Flatpak `com.daidouji.oneko` + autostart `flatpak run …` (native `oneko` removed from Arch repos)
+
+👉 Goal:
+
+* apps installable without breaking base system
+
+---
+
+# 🧪 10. LIVE ENVIRONMENT QUALITY
+
+### ✅ Must work in **QEMU**
+
+* [ ] boots without errors — **validate** after ISO build (`./qemu-smoke.sh …`)
+* [ ] network works
+* [ ] KDE loads
+* [ ] theme applied
+
+### ✅ No blocking bugs
+
+* [ ] no service failures
+* [ ] no missing firmware
+
+### ✅ Build host notes
+
+* [x] **Docker:** `pacstrap` needs **`--privileged`** (or equivalent caps); see [README.md](README.md).
+* [x] **GitHub Actions:** `build-archiso.yml` uses `container.options: --privileged`.
+
+---
+
+# 🧠 11. CUSTOMIZATION ENGINE (future-proofing)
+
+### ✅ `customize_airootfs.sh`
+
+* [x] user creation
+* [x] services enable
+* [x] theme setup (skel + `xdg-user-dirs-update`)
+* [x] aliases
+* [x] flatpak setup
+
+👉 This script = **core of your distro**
+
+---
+
+# 🚀 12. CHOUTOULU OS FUTURE LAYER (don’t add yet)
+
+This is what comes later:
+
+* [ ] custom branding (logo, name, `/etc/os-release`) — partial: `profiledef.sh` / ISO metadata only
+* [ ] custom KDE layout
+* [x] welcome app / first boot wizard — minimal: `kitest-welcome` + autostart (not Calamares-scale)
+* [ ] installer (Calamares)
+* [ ] custom repo (optional)
+
+👉 Keep Kitest OS = clean base
+👉 Build Choutoulu OS on top
+
+---
+
+# 💡 Final philosophy (this matters)
+
+Right now you should aim for:
+
+> 🟢 Stable
+> 🟢 Clean
+> 🟢 Secure
+> 🟢 Theme-ready
+> ❌ Not over-customized
+
+---
+
+# 🐱 Naming idea (optional but fun)
+
+* **Kitest OS** → dev/testing base
+* **Choutoulu OS** → polished release
+* **Cappuccin OS** → port version (after proposal)
+
+👉 Exactly like:
+
+* Arch → base
+* Manjaro / Endeavour → user distros
+
+## flatpak apps (see `kitest-desktop-extras.sh`)
+
+- [x] Brave
+- [x] Flatseal
+- [x] Steam
+- [x] oneko (`com.daidouji.oneko`)
+- [ ] sources check ? stable sources for enhance sec by default ?
+- [ ] local package vs online 
+- [ ] live iso test ?
+- [ ] skill to generate :
+    -> arch linux, 
+    -> kernel dev, 
+    -> devops kernel, 
+    -> dev, 
+    -> cappuccin theme and port,  
+    -> linux secops
+    -> linux dev
+
+- [ ] flatpak hub or something for cappuccin
+
+# calamares
+
+## profile installer
+
+-> default linux + maybe flavors
+
+## driver installer
+
+-> amd, nvidia, etc
+
+## partition installer
+
+-> default linux setup ...
+
+## theme customizer ?
+
+capucin color wheel or something ?
+
+## default bunble selection
+
+cumulate :
+-> flatpak install setup trader
+-> flatpak install setup gamer
+-> dev
+-> security
+-> capucin hub ?
+-> etc

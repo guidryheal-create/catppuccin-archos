@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Catppuccin ports hub
+Comment=Browse Catppuccin themes and app ports (https://catppuccin.com/ports/)
+Exec=xdg-open https://catppuccin.com/ports/
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=Qt;Documentation;
