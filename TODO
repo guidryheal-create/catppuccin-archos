@@ -83,7 +83,8 @@ Using **Catppuccin**
 
 * [x] Kvantum config present (`/etc/skel/.config/Kvantum/` → MateriaDark)
 * [x] GTK config present (`Breeze-Dark` + Papirus in skel)
-* [x] Qt config present (`qt5ct`/`qt6ct` + `QT_QPA_PLATFORMTHEME` in `/etc/environment`)
+* [x] Qt config present (`qt5ct`/`qt6ct` in skel; platform theme is **not** forced globally)
+* [x] Theme selector present (menu + Desktop shortcut; **user-only** config writes)
 
 👉 Goal:
 
@@ -252,8 +253,8 @@ This is what comes later:
 * [ ] custom branding (logo, name, `/etc/os-release`) — partial: `profiledef.sh` / ISO metadata only
 * [ ] custom KDE layout
 * [x] welcome app / first boot wizard — minimal: `kitest-welcome` + autostart (not Calamares-scale)
-* [ ] installer (Calamares)
-* [ ] custom repo (optional)
+* [x] installer (Calamares) — profile in `airootfs/etc/calamares/`; **`calamares`** binary from **[endeavouros]** (Chaotic-AUR sync DB has no `calamares` package; see `pacman.conf`, `build-iso.sh`, README)
+* [x] custom repo (optional) — `[endeavouros]` + `airootfs/etc/pacman.d/endeavouros-mirrorlist` for installer + live pacman
 
 👉 Keep Kitest OS = clean base
 👉 Build Choutoulu OS on top
@@ -289,44 +290,13 @@ Right now you should aim for:
 - [x] Flatseal
 - [x] Steam
 - [x] oneko (`com.daidouji.oneko`)
-- [ ] sources check ? stable sources for enhance sec by default ?
-- [ ] local package vs online 
-- [ ] live iso test ?
 - [ ] skill to generate :
     -> arch linux, 
     -> kernel dev, 
     -> devops kernel, 
     -> dev, 
-    -> cappuccin theme and port,  
+    -> cappuccin theme and port,
     -> linux secops
     -> linux dev
 
-- [ ] flatpak hub or something for cappuccin
-
-# calamares
-
-## profile installer
-
--> default linux + maybe flavors
-
-## driver installer
-
--> amd, nvidia, etc
-
-## partition installer
-
--> default linux setup ...
-
-## theme customizer ?
-
-capucin color wheel or something ?
-
-## default bunble selection
-
-cumulate :
--> flatpak install setup trader
--> flatpak install setup gamer
--> dev
--> security
--> capucin hub ?
--> etc
+- [ ] cache build step or start from prebuild cachy to accelerate kernel building

@@ -1,4 +1,5 @@
 # Theming + fonts + minimal shell extras for live session.
+# Default UI: Plasma Breeze (see customize_airootfs.sh). kvantum optional for manual install.
 papirus-icon-theme
 kvantum
 kvantum-theme-materia

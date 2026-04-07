@@ -1,10 +1,6 @@
 #!/bin/bash
 [[ -f /home/kitest/.kitest_done ]] && exit 0
 
-kdialog --title "Welcome to Kitest OS" --msgbox "Welcome to Kitest OS — a Tor-forwarded, kernel-hacking friendly Arch live environment.
-
-Configure mirrors and install apps with pacman or Flatpak when you are ready.
-
-This dialog runs once per user."
+kdialog --title "Welcome to catoulou OS" --msgbox "Enjoy your stay!"
 
 touch /home/kitest/.kitest_done

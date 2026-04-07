@@ -1,12 +1,11 @@
 [Desktop Entry]
 Type=Application
-Name=Install Kitest OS
-Comment=Launch Calamares installer (starts after Plasma login)
+Version=1.0
+Name=Install Kitest OS (safe)
+Comment=Launch Calamares with safe Qt environment
 Exec=/usr/local/bin/kitest-calamares-safe
 TryExec=/usr/local/bin/kitest-calamares-safe
 Icon=calamares
 Terminal=false
 StartupNotify=true
-Categories=Qt;System;
-Hidden=true
-X-GNOME-Autostart-enabled=false
+Categories=System;Installer;Qt;

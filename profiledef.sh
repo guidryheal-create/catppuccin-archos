@@ -26,4 +26,5 @@ file_permissions=(
   ["/usr/local/bin/kitest-desktop-extras.sh"]="0:0:755"
   ["/usr/local/bin/kitest-calamares-flatpak.sh"]="0:0:755"
   ["/usr/local/bin/kitest-calamares-cleanup.sh"]="0:0:755"
+  ["/usr/local/bin/kitest-calamares-safe"]="0:0:755"
 )

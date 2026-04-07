@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Calamares inherits the session environment. In some VMs/GPUs, early Qt style
+# overrides (qt5ct/qt6ct/kvantum/QT_STYLE_OVERRIDE) can produce black/blank UI.
+# This wrapper keeps the live installer launch stable and logs output for debugging.
+
+sleep "${KITEST_CALAMARES_DELAY_S:-2}"
+
+unset QT_STYLE_OVERRIDE KVANTUM_STYLE QT_QPA_PLATFORMTHEME 2>/dev/null || true
+export QT_QPA_PLATFORMTHEME=kde
+
+exec /usr/bin/calamares --logfile /tmp/calamares.log "$@"
+

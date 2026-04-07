@@ -1,3 +1,7 @@
+# Calamares: not in [core]/[extra]. Binary package is provided by the EndeavourOS repo
+# (not Chaotic-AUR — no calamares entry in chaotic-aur.db). AUR: https://aur.archlinux.org/packages/calamares
+# Installer UI config lives in airootfs/etc/calamares/ (this profile, not calamares-config).
+endeavouros-mirrorlist
+endeavouros-keyring
 calamares
-qt6-base
 kpmcore

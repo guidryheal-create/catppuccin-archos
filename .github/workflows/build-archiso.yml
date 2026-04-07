@@ -11,6 +11,7 @@ name: Build ISO
       - 'packages.x86_64'
       - 'packages.d/**'
       - 'build-iso.sh'
+      - 'scripts/**'
       - 'bootstrap_packages'
       - 'pacman.conf'
       - 'profiledef.sh'
@@ -37,6 +38,11 @@ jobs:
           pacman-key --init
           pacman-key --populate archlinux
           pacman -Sy --needed --noconfirm archiso arch-install-scripts git
+
+      - name: Trust EndeavourOS repo (Calamares binary)
+        run: |
+          set -euo pipefail
+          bash "${GITHUB_WORKSPACE}/scripts/bootstrap-endeavouros-pacman.sh"
 
       - name: Merge packages.d into packages.x86_64
         run: |

@@ -1,0 +1,17 @@
+######################################################
+### EndeavourOS Repository Mirrorlist (subset)
+### Full list: https://github.com/endeavouros-team/PKGBUILDS/blob/master/endeavouros-mirrorlist/endeavouros-mirrorlist
+### In /etc/pacman.conf:
+###   [endeavouros]
+###   SigLevel = PackageRequired
+###   Include = /etc/pacman.d/endeavouros-mirrorlist
+######################################################
+
+## United States
+Server = https://mirrors.gigenet.com/endeavouros/repo/$repo/$arch
+
+## Germany
+Server = https://mirror.alpix.eu/endeavouros/repo/$repo/$arch
+
+## Taiwan
+Server = https://mirror.archlinux.tw/EndeavourOS/repo/$repo/$arch

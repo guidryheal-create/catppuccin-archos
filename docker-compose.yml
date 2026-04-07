@@ -25,7 +25,7 @@ services:
       - -lc
       - |
         set -euo pipefail
-        pacman -Sy --needed --noconfirm archiso arch-install-scripts ca-certificates
+        pacman -Sy --needed --noconfirm archiso arch-install-scripts ca-certificates curl
         ./build-iso.sh
 
   dev-shell:

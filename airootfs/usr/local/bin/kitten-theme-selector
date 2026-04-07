@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+app_title="Kitten Theme Selector"
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || {
+    printf '%s\n' "$app_title: missing dependency: $1" >&2
+    exit 1
+  }
+}
+
+need_cmd kdialog
+
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
+qt5ct_conf="$config_dir/qt5ct/qt5ct.conf"
+qt6ct_conf="$config_dir/qt6ct/qt6ct.conf"
+kvantum_conf="$config_dir/Kvantum/kvantum.kvconfig"
+kvantum_user_themes="$config_dir/Kvantum/themes"
+plasma_env_dir="$config_dir/plasma-workspace/env"
+plasma_env_file="$plasma_env_dir/kitten-qt-platformtheme.sh"
+
+set_qtct_style() {
+  local file="$1"
+  local style="$2"
+  mkdir -p "$(dirname "$file")"
+  if [[ -f "$file" ]]; then
+    if grep -qE '^\[Appearance\]' "$file"; then
+      if grep -qE '^style=' "$file"; then
+        sed -i "s/^style=.*/style=${style}/" "$file"
+      else
+        sed -i "/^\[Appearance\]/a style=${style}" "$file"
+      fi
+    else
+      cat >>"$file" <<EOF
+
+[Appearance]
+style=${style}
+EOF
+    fi
+  else
+    cat >"$file" <<EOF
+[Appearance]
+standard_dialogs=default
+style=${style}
+EOF
+  fi
+}
+
+set_kvantum_theme() {
+  local theme="$1"
+  mkdir -p "$(dirname "$kvantum_conf")"
+  cat >"$kvantum_conf" <<EOF
+[General]
+theme=${theme}
+EOF
+}
+
+enable_user_qt_platformtheme() {
+  local platformtheme="$1"
+  mkdir -p "$plasma_env_dir"
+  cat >"$plasma_env_file" <<EOF
+#!/usr/bin/env bash
+export QT_QPA_PLATFORMTHEME=${platformtheme}
+EOF
+  chmod +x "$plasma_env_file" 2>/dev/null || true
+}
+
+disable_user_qt_platformtheme() {
+  rm -f "$plasma_env_file"
+}
+
+choose_mode="$(
+  kdialog --title "$app_title" --menu "Choose theme mode:" \
+    breeze "Breeze (safe default)" \
+    catppuccin "Catppuccin (Kvantum; user-only)" \
+    2>/dev/null || true
+)"
+
+[[ -n "${choose_mode:-}" ]] || exit 0
+
+case "$choose_mode" in
+  breeze)
+    disable_user_qt_platformtheme
+    set_qtct_style "$qt5ct_conf" "breeze"
+    set_qtct_style "$qt6ct_conf" "breeze"
+    kdialog --title "$app_title" --msgbox "Set to Breeze (safe).\\n\\nThis only changed your user config.\\n\\nFor full effect, log out and log back in." 2>/dev/null || true
+    ;;
+
+  catppuccin)
+    theme_root="/usr/share/kitten-themes/kvantum"
+    if [[ ! -d "$theme_root" ]]; then
+      kdialog --title "$app_title" --error "No bundled themes found at:\\n$theme_root\\n\\nRebuild the ISO with KITEST_BUNDLE_CATPPUCCIN_KVANTUM=1, or install themes manually." 2>/dev/null || true
+      exit 1
+    fi
+
+    mapfile -t theme_dirs < <(ls -1 "$theme_root" 2>/dev/null | sort -V)
+    if [[ "${#theme_dirs[@]}" -eq 0 ]]; then
+      kdialog --title "$app_title" --error "No Kvantum themes found in:\\n$theme_root" 2>/dev/null || true
+      exit 1
+    fi
+
+    # Build kdialog menu args: (id label) pairs.
+    menu_args=()
+    for d in "${theme_dirs[@]}"; do
+      [[ -d "$theme_root/$d" ]] || continue
+      menu_args+=("$d" "$d")
+    done
+
+    selected_theme="$(
+      kdialog --title "$app_title" --menu "Select a Catppuccin Kvantum theme folder:" "${menu_args[@]}" 2>/dev/null || true
+    )"
+    [[ -n "${selected_theme:-}" ]] || exit 0
+
+    mkdir -p "$kvantum_user_themes"
+    rm -rf "$kvantum_user_themes/$selected_theme" 2>/dev/null || true
+    cp -a "$theme_root/$selected_theme" "$kvantum_user_themes/" 2>/dev/null || {
+      kdialog --title "$app_title" --error "Failed to copy theme into your home directory." 2>/dev/null || true
+      exit 1
+    }
+
+    set_kvantum_theme "$selected_theme"
+    set_qtct_style "$qt5ct_conf" "kvantum"
+    set_qtct_style "$qt6ct_conf" "kvantum"
+    enable_user_qt_platformtheme "qt6ct"
+
+    kdialog --title "$app_title" --msgbox "Catppuccin Kvantum enabled for your user.\\n\\nApplied theme: $selected_theme\\n\\nFor full effect, log out and log back in." 2>/dev/null || true
+    ;;
+
+  *)
+    exit 0
+    ;;
+esac
+

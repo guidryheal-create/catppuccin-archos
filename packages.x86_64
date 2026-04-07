@@ -48,7 +48,7 @@ less
 lftp
 libfido2
 libusb-compat
-linux
+linux-kitten-cachyos-hardened
 linux-atm
 linux-firmware
 linux-firmware-marvell
@@ -90,6 +90,7 @@ ppp
 pptpclient
 pv
 qemu-guest-agent
+spice-vdagent
 refind
 reflector
 rsync
@@ -161,6 +162,7 @@ pipewire
 pipewire-alsa
 pipewire-pulse
 wireplumber
+endeavouros-mirrorlist
+endeavouros-keyring
 calamares
-qt6-base
 kpmcore
