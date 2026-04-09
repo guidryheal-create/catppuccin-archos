@@ -12,7 +12,9 @@ bootmodes=('bios.syslinux'
            'uefi.systemd-boot')
 pacman_conf="pacman.conf"
 airootfs_image_type="squashfs"
-airootfs_image_tool_options=('-comp' 'xz' '-Xbcj' 'x86' '-b' '1M' '-Xdict-size' '1M')
+# SquashFS compression: prefer lower-RAM, faster builds than XZ defaults.
+# Keep CPU usage bounded to avoid OOM / xz failures on constrained builders.
+airootfs_image_tool_options=('-processors' '2' '-comp' 'zstd' '-Xcompression-level' '15')
 bootstrap_tarball_compression=('zstd' '-c' '-T0' '--auto-threads=logical' '--long' '-19')
 file_permissions=(
   ["/etc/shadow"]="0:0:400"
