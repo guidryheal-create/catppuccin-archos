@@ -41,7 +41,7 @@
 ### ❌ Remove conflicts
 
 * [x] remove `dhcpcd` (not in `packages.x86_64`; profile uses NM + iwd)
-* [ ] remove `wpa_supplicant` (may still be pulled as an optional NM dependency — verify with `pacman -Qi networkmanager`)
+* [x] keep `wpa_supplicant` (reliability; Calamares/NM Wi‑Fi during install)
 
 * [x] **Live ISO:** `systemd-networkd` masked; `NetworkManager.conf` uses `wifi.backend=iwd` (see `customize_airootfs.sh`, `airootfs/etc/NetworkManager/`).
 
@@ -299,4 +299,10 @@ Right now you should aim for:
     -> linux secops
     -> linux dev
 
-- [ ] cache build step or start from prebuild cachy to accelerate kernel building
+---
+
+## Build system / layering (new helpers)
+
+- [x] Split build into helper scripts (`scripts/build-kernel.sh`, `scripts/prepare-repo.sh`, `scripts/gen-packages.sh`)
+- [x] Reuse `WORK_DIR` by default (incremental `mkarchiso`), with `KITEST_CLEAN=airootfs|work`
+- [ ] Document and test a “warm cache offline” build path (`KITEST_OFFLINE=1`) end-to-end

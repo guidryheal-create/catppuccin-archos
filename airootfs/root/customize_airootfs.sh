@@ -12,7 +12,7 @@ if [[ -d /usr/share/kitest/calamares-modules ]]; then
 fi
 
 # -------------------------
-# NETWORK: NM + iwd only (avoid fighting systemd-networkd)
+# NETWORK: NetworkManager + wpa_supplicant (avoid fighting systemd-networkd)
 # -------------------------
 systemctl mask systemd-networkd.service
 systemctl mask systemd-networkd-wait-online.service
@@ -181,7 +181,6 @@ chmod 440 "/etc/sudoers.d/${LIVE_USER}"
 # -------------------------
 # SERVICES (slim live: optional stacks install via Calamares on target)
 # -------------------------
-systemctl enable iwd
 systemctl enable NetworkManager
 systemctl enable sddm
 systemctl enable qemu-guest-agent 2>/dev/null || true

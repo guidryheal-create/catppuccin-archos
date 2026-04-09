@@ -3,13 +3,11 @@ alsa-utils
 amd-ucode
 arch-install-scripts
 archinstall
-b43-fwcutter
 base
 bcachefs-tools
 bind
 bolt
 brltty
-broadcom-wl
 btrfs-progs
 clonezilla
 cloud-init
@@ -41,7 +39,6 @@ hyperv
 intel-ucode
 irssi
 iw
-iwd
 jfsutils
 kitty-terminfo
 ldns
@@ -49,7 +46,6 @@ less
 lftp
 libfido2
 libusb-compat
-linux-kitten-cachyos-hardened
 linux-atm
 linux-firmware
 linux-firmware-marvell
@@ -119,6 +115,7 @@ usbutils
 vim
 virtualbox-guest-utils-nox
 vpnc
+wpa_supplicant
 wireless-regdb
 wireless_tools
 wvdial

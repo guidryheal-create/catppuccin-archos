@@ -14,6 +14,39 @@ description: >-
 - **Build**: on **Arch** as **root** — `sudo ./build-iso.sh`, or **`docker compose run --rm build-iso`** (see `docker-compose.yml`; requires `privileged` for pacstrap).
 - **Customize hook**: `airootfs/root/customize_airootfs.sh` runs once in the chroot after packages; it is removed afterward by mkarchiso.
 
+## Layered build helpers (fast iteration)
+
+This repo supports a layered workflow (kernel → local repo → ISO) so you don’t pay the full rebuild cost every time.
+
+- **Kernel artifact (rare):**
+  - `sudo ./scripts/build-kernel.sh`
+- **Refresh local pacman repo DB (sometimes):**
+  - `sudo ./scripts/prepare-repo.sh`
+- **Build ISO (often):**
+  - `sudo ./build-iso.sh`
+  - or ISO-only: `sudo ./scripts/build-iso-only.sh` (runs package list generation + `mkarchiso` only)
+
+### WORK_DIR reuse (mkarchiso cache)
+
+`./build-iso.sh` reuses `WORK_DIR` by default.
+
+Control cleanup with `KITEST_CLEAN`:
+
+- `KITEST_CLEAN=none` (default)
+- `KITEST_CLEAN=airootfs` (rebuild rootfs layer; keep caches)
+- `KITEST_CLEAN=work` / `all` (full wipe)
+
+### Offline-first
+
+To force no network (fail fast if something would require downloading):
+
+- `KITEST_OFFLINE=1 sudo ./build-iso.sh`
+
+Notes:
+
+- EndeavourOS key bootstrap is skipped automatically if `endeavouros-keyring` and `endeavouros-mirrorlist` are already installed on the host.
+- Kernel dependency install is skipped when `KITEST_OFFLINE=1` (deps must already be installed if you want to rebuild offline).
+
 ## Pacman / mirrors (common failures)
 
 - **`mirrorlist` missing**: this profile uses explicit `Server =` lines in `pacman.conf`, not `/etc/pacman.d/mirrorlist`.

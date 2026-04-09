@@ -12,7 +12,7 @@ strings:
 images:
   productIcon: "logo.png"
   productLogo: "logo.png"
-  productWallpaper: "wallpaper.gif"
+  productWallpaper: "wallpaper.png"
   productWelcome: "welcome.png"
 
 slideshowAPI: 2

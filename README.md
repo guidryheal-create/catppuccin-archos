@@ -39,7 +39,7 @@ Installer **configuration** is **not** a separate `calamares-config` package her
 
 ## Build on Arch (native)
 
-Needs **root** and **network** (for the EndeavourOS keyring bootstrap), then `mkarchiso`:
+Needs **root**. **Network is only required when a step can’t be satisfied from cache** (EndeavourOS keyring bootstrap, pacstrap downloads, kernel deps/sources).
 
 ```bash
 sudo ./build-iso.sh
@@ -47,13 +47,80 @@ sudo ./build-iso.sh
 
 ISO output: `/var/tmp/kitest-out/` (override with `WORK_DIR` / `OUT_DIR`).
 
+### Layered / incremental builds (recommended)
+
+This repo supports a “layered” workflow so you don’t rebuild expensive pieces every time.
+
+- **Layer 1 — kernel artifact** (rare):
+
+```bash
+sudo ./scripts/build-kernel.sh
+```
+
+- **Layer 2 — local repo refresh** (sometimes):
+
+```bash
+sudo ./scripts/prepare-repo.sh
+```
+
+- **Layer 3 — ISO build** (often):
+
+```bash
+sudo ./build-iso.sh
+```
+
+### Building variants (kernel / Broadcom)
+
+Package selection is **composed** from fragments in `packages.d/`. Pick variants via env vars:
+
+- **Kernel**: `KITEST_KERNEL=kitten` (default) or `KITEST_KERNEL=linux`
+- **Broadcom**: `KITEST_BRCM_DRIVER=b43` (default) or `KITEST_BRCM_DRIVER=wl`
+
+If you want multiple ISOs from one tree, use **separate** `WORK_DIR` and `OUT_DIR` per variant to avoid cache contamination:
+
+```bash
+WORK_DIR=/var/tmp/kitest-work-kitten OUT_DIR=/var/tmp/kitest-out-kitten \
+  KITEST_KERNEL=kitten KITEST_BRCM_DRIVER=b43 sudo ./build-iso.sh
+
+WORK_DIR=/var/tmp/kitest-work-linux OUT_DIR=/var/tmp/kitest-out-linux \
+  KITEST_KERNEL=linux KITEST_BRCM_DRIVER=wl sudo ./build-iso.sh
+```
+
+#### Reusing `WORK_DIR` (mkarchiso cache)
+
+By default, `./build-iso.sh` **reuses** `WORK_DIR` for faster rebuilds (it no longer wipes the whole work directory each run).
+
+To control cleaning, use `KITEST_CLEAN`:
+
+- **Keep everything (default)**: `KITEST_CLEAN=none`
+- **Rebuild rootfs layer but keep caches**: `KITEST_CLEAN=airootfs`
+- **Full wipe**: `KITEST_CLEAN=work` (or `all`)
+
+Example:
+
+```bash
+KITEST_CLEAN=airootfs sudo ./build-iso.sh
+```
+
+#### Offline-first
+
+To force “no network” (fail fast if something would need downloading):
+
+```bash
+KITEST_OFFLINE=1 sudo ./build-iso.sh
+```
+
+Notes:
+
+- EndeavourOS trust bootstrap is **skipped automatically** if `endeavouros-keyring` and `endeavouros-mirrorlist` are already installed on the build host.\n+- Kernel build deps installation is skipped when `KITEST_OFFLINE=1` (so ensure deps are preinstalled if you want a true offline kernel rebuild attempt).
+
 ## Kernel: Kitten CachyOS-style (hardened + BORE)
 
 This profile replaces the stock Arch `linux` package with a **CachyOS-style hardened+BORE** kernel package built from the PKGBUILD under:
 
 - [`pkgs/linux-kitten-cachy/PKGBUILD`](pkgs/linux-kitten-cachy/PKGBUILD)
 
-During `./build-iso.sh`, the kernel package is built with `makepkg` and added to a local pacman repo:
+During `./build-iso.sh`, the kernel package is built with `makepkg` (via `scripts/build-kernel.sh`) and added to a local pacman repo:
 
 - repo: **`[kitten-local]`** in [`pacman.conf`](pacman.conf)
 - path: **`file:///var/tmp/kitest-localrepo`**
@@ -65,7 +132,7 @@ The ISO still boots using the **standard archiso filenames**:
 
 To keep bootloader entries unchanged, [`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) copies the kernel image from `/usr/lib/modules/*/vmlinuz` into `/boot/vmlinuz-linux` during ISO build, then runs **`mkinitcpio -p linux`** (the `linux.preset` contains the `archiso` preset) so **`/boot/initramfs-linux.img`** exists. Without that step (and/or without the kernel package installing `/boot/vmlinuz-linux` early), pacstrap-time hooks may only build **`initramfs-<pkgbase>.img`** (e.g. `initramfs-linux-kitten-cachyos-hardened.img`), while **systemd-boot still references `initramfs-linux.img`** — which causes an immediate return to the boot menu (missing initrd).
 
-**Faster rebuilds (optional):** `./build-iso.sh` reuses existing `linux-kitten-cachyos-hardened*.pkg.tar.zst` in `LOCALREPO_DIR` when `PKGBUILD` + `config` are unchanged (see `.kernel-src-stamp`). Set `KITEST_FORCE_KERNEL_REBUILD=1` to force a full kernel compile. Set `KITEST_SKIP_KERNEL_BUILD=1` only if packages are already in the local repo. Persistent `makepkg` tree: `KITEST_KERNEL_BUILD_DIR` (default `LOCALREPO_DIR/.kernel-build`).
+**Faster rebuilds (optional):** kernel builds are already cache-aware:\n+\n+- `scripts/build-kernel.sh` (and `./build-iso.sh`) reuses existing `linux-kitten-cachyos-hardened*.pkg.tar.zst` in `LOCALREPO_DIR` when `PKGBUILD` + `config` are unchanged (see `.kernel-src-stamp`).\n+- Set `KITEST_FORCE_KERNEL_REBUILD=1` to force a full kernel compile.\n+- Set `KITEST_SKIP_KERNEL_BUILD=1` only if packages are already in the local repo.\n+- Persistent `makepkg` tree: `KITEST_KERNEL_BUILD_DIR` (default `LOCALREPO_DIR/.kernel-build`).
 
 **Important:** the Kitten kernel package `provides=(linux)` and `conflicts=(linux)` so pacstrap does not install the stock Arch `linux` package alongside it (a kernel/initramfs modules mismatch will break boot device detection in initramfs).
 
