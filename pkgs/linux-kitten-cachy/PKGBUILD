@@ -532,7 +532,12 @@ _package() {
     echo "Installing boot image..."
     # systemd expects to find the kernel here to allow hibernation
     # https://github.com/systemd/systemd/commit/edda44605f06a41fb86b7ab8128dcf99161d2344
-    install -Dm644 "$(make -s image_name)" "$modulesdir/vmlinuz"
+    kernel_img="$(make -s image_name)"
+    install -Dm644 "$kernel_img" "$modulesdir/vmlinuz"
+
+    # Archiso/mkinitcpio presets expect /boot/vmlinuz-linux to exist during package install hooks.
+    # Without this, pacstrap-time mkinitcpio runs can fail and the ISO may miss initramfs-linux.img.
+    install -Dm644 "$kernel_img" "$pkgdir/boot/vmlinuz-linux"
 
     # Used by mkinitcpio to name the kernel
     echo "$pkgbase" | install -Dm644 /dev/stdin "$modulesdir/pkgbase"

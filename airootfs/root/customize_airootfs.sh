@@ -78,15 +78,17 @@ install -Dm644 "$kernel_image" /boot/vmlinuz-linux
 # /usr/lib/modules/*/vmlinuz (not /boot/vmlinuz-linux), so hooks may produce initramfs-<pkgbase>.img only
 # and never run the archiso preset that writes /boot/initramfs-linux.img. Build it now that vmlinuz-linux exists.
 if command -v mkinitcpio >/dev/null 2>&1; then
-  if ! mkinitcpio -p archiso; then
-    echo "ERROR: mkinitcpio -p archiso failed — ISO bootloaders require /boot/initramfs-linux.img" >&2
+  # /etc/mkinitcpio.d/linux.preset defines PRESETS=('archiso') and archiso_image="/boot/initramfs-linux.img".
+  # mkinitcpio does NOT use a separate /etc/mkinitcpio.d/archiso.preset, so invoke the linux preset.
+  if ! mkinitcpio -p linux; then
+    echo "ERROR: mkinitcpio -p linux failed — ISO bootloaders require /boot/initramfs-linux.img" >&2
     exit 1
   fi
 else
   echo "ERROR: mkinitcpio not found; cannot create initramfs-linux.img" >&2
   exit 1
 fi
-[[ -r /boot/initramfs-linux.img ]] || { echo "ERROR: /boot/initramfs-linux.img missing after mkinitcpio -p archiso" >&2; exit 1; }
+[[ -r /boot/initramfs-linux.img ]] || { echo "ERROR: /boot/initramfs-linux.img missing after mkinitcpio -p linux" >&2; exit 1; }
 
 # -------------------------
 # Qt / Plasma: Breeze default — Kvantum + Catppuccin + QT_STYLE_OVERRIDE caused black/partial UI
