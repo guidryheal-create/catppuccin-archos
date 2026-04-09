@@ -22,13 +22,13 @@ description: >-
 
 ## Flatpak on the ISO
 
-- Flathub apps are installed in **`kitest-desktop-extras.sh`** (Brave, Steam, Flatseal, oneko Flatpak). **Unset `*proxy*`** for that step: global Tor proxy in `/etc/environment` breaks Flathub downloads.
+- Flathub apps are installed in **`kitest-desktop-extras.sh`** (Brave, Steam, Flatseal, oneko Flatpak). There is **no** global proxy in `/etc/environment` by default.
 - If the image was built **offline**, run on live: `sudo /usr/local/bin/kitest-desktop-extras.sh`.
 - **Skel autostart** for oneko must use **`flatpak run com.daidouji.oneko`**, not the removed native `oneko` package.
 
 ## Conventions here
 
-- **Tor + proxy**: intentional for this profile; expect clearnet-only tools (Steam, some Flatpak) to need exceptions or user adjustment.
+- **No global Tor/SOCKS proxy** in `/etc/environment`; optional Tor can be offered later (e.g. Calamares bundle) per user.
 - **NM + iwd**: `systemd-networkd` is masked; `NetworkManager.conf` sets `wifi.backend=iwd`.
 - Do **not** edit the user’s plan file in `.cursor/plans/` unless they ask.
 

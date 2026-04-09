@@ -44,7 +44,7 @@ awesome_security_arch_repo:
 # Grouped by theme — “easy” = repo, Flathub, or already on the live image.
 catppuccin_ports_by_category:
   qt_and_kde:
-    note: "Kvantum + qt5ct/qt6ct; themes ship on ISO via catppuccin/kvantum GitHub."
+    note: "Kvantum + qt5ct/qt6ct are available; Catppuccin Kvantum theme assets may be bundled into the ISO depending on build settings."
     repo_examples:
       - kvantum
       - qt5ct

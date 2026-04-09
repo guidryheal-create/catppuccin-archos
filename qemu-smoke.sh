@@ -9,7 +9,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  qemu-smoke.sh [--persist] /path/to/kitest-*.iso
+  qemu-smoke.sh [--persist] [/path/to/kitest-*.iso]
 
 Environment:
   MEM=4096                 RAM in MiB
@@ -24,6 +24,14 @@ Environment:
   QEMU_GPU=virtio          QEMU display device (default: virtio-gl)
   QEMU_GPU=virtio-gl       virtio-vga-gl + gtk GL (often fixes Plasma black screens)
   QEMU_GPU=qxl             QXL (fallback for debugging)
+
+  QEMU_HEADLESS=1          run without GTK window (serial console only)
+
+  QEMU_EXTRA_ARGS=...      extra qemu args (quoted string), e.g. -serial stdio for kernel log on this terminal
+
+  QEMU_HOSTFWD=...         optional extra -netdev user options after id=net0 (comma-separated), e.g.
+                             hostfwd=tcp::2222-:22   (host 127.0.0.1:2222 -> guest :22 for ssh)
+                             hostfwd=tcp::2222-:22,hostfwd=tcp::8443-:443
 EOF
 }
 
@@ -39,6 +47,13 @@ fi
 
 ISO="${1:-}"
 if [[ -z "$ISO" ]]; then
+  # Auto-pick newest ISO in ./out for convenience.
+  if compgen -G "out/kitest-*.iso" >/dev/null; then
+    ISO="$(ls -t out/kitest-*.iso 2>/dev/null | head -n 1 || true)"
+  fi
+fi
+if [[ -z "$ISO" || ! -r "$ISO" ]]; then
+  echo "ISO not found/readable. Pass path or ensure out/kitest-*.iso exists." >&2
   usage >&2
   exit 2
 fi
@@ -122,10 +137,25 @@ args=(
   -machine "q35,accel=$accel"
   -m "$MEM"
   -cpu "$cpu"
+  # Attach the ISO in two ways:
+  # - as a traditional ATAPI CDROM (-cdrom) (gives /dev/sr0 path)
+  # - as a readonly virtio-blk disk (gives /dev/vda path)
+  #
+  # Some initramfs/kernel combos can fail to expose one of these in early boot.
   -cdrom "$ISO"
+  -drive "file=$ISO,if=virtio,media=disk,readonly=on,format=raw"
   -boot order=d
-  -netdev user,id=net0
+)
+
+# User networking: guest can reach host at 10.0.2.2; optional QEMU_HOSTFWD for host->guest (e.g. SSH).
+net_user_args="id=net0"
+if [[ -n "${QEMU_HOSTFWD:-}" ]]; then
+  net_user_args="id=net0,${QEMU_HOSTFWD}"
+fi
+args+=(
+  -netdev "user,${net_user_args}"
   -device virtio-net-pci,netdev=net0
+  -device virtio-rng-pci
 )
 
 require_cmd() {
@@ -168,7 +198,13 @@ if [[ -n "$persist_img" ]]; then
   fi
 
   if [[ $persist_enabled -eq 1 && ! -e "$persist_img" ]]; then
-    mk_persist_img "$persist_img" "${QEMU_PERSIST_SIZE:-8G}"
+    if ! mk_persist_img "$persist_img" "${QEMU_PERSIST_SIZE:-8G}"; then
+      # If ISO directory isn't writable (common when ISO owned by root), fall back to /tmp.
+      persist_img="/tmp/${iso_base}.persist.img"
+      persist_auto=1
+      [[ "${QEMU_PERSIST_KEEP:-0}" != 1 ]] && rm -f -- "$persist_img"
+      mk_persist_img "$persist_img" "${QEMU_PERSIST_SIZE:-8G}"
+    fi
   fi
 
   if [[ ! -f "$persist_img" ]]; then
@@ -206,7 +242,11 @@ else
       args+=(-vga virtio)
       ;;
     virtio-gl)
-      args+=(-device virtio-vga-gl -display gtk,gl=on)
+      if [[ "${QEMU_HEADLESS:-0}" == 1 ]]; then
+        args+=(-vga virtio)
+      else
+        args+=(-device virtio-vga-gl -display gtk,gl=on)
+      fi
       ;;
     qxl)
       args+=(-vga qxl)
@@ -217,6 +257,17 @@ else
       exit 2
       ;;
   esac
+fi
+
+if [[ "${QEMU_HEADLESS:-0}" == 1 ]]; then
+  args+=(-display none -serial mon:stdio)
+fi
+
+if [[ -n "${QEMU_EXTRA_ARGS:-}" ]]; then
+  # Intentional word-splitting so you can pass: QEMU_EXTRA_ARGS="-serial stdio"
+  # shellcheck disable=SC2206
+  extra_qemu=( ${QEMU_EXTRA_ARGS} )
+  args+=("${extra_qemu[@]}")
 fi
 
 exec qemu-system-x86_64 "${args[@]}"

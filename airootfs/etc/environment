@@ -1,2 +1,1 @@
-http_proxy=socks5://127.0.0.1:9050
-https_proxy=socks5://127.0.0.1:9050
+# No global HTTP/HTTPS proxy. Optional Tor can be added later (e.g. Calamares bundle) per user.

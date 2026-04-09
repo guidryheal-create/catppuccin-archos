@@ -5,3 +5,5 @@ endeavouros-mirrorlist
 endeavouros-keyring
 calamares
 kpmcore
+# EndeavourOS calamares may not always pull yaml-cpp; without it: libyaml-cpp.so missing at runtime.
+yaml-cpp

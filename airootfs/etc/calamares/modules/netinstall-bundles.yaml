@@ -77,7 +77,7 @@ groups:
       - libreoffice-fresh
 
   - name: "Theming extras"
-    description: "Extra GTK theming from official repos (Catppuccin Kvantum is already on the image)."
+    description: "Extra GTK theming from official repos (Qt theming via Kvantum is available on the image; Catppuccin assets depend on the ISO build settings)."
     selected: false
     packages:
       - arc-gtk-theme

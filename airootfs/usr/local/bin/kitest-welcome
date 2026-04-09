@@ -1,6 +1,10 @@
 #!/bin/bash
-[[ -f /home/kitest/.kitest_done ]] && exit 0
+user="${KITEST_LIVE_USER:-kitest}"
+home_dir="$(getent passwd "$user" | cut -d: -f6)"
+home_dir="${home_dir:-/home/$user}"
+
+[[ -f "$home_dir/.kitest_done" ]] && exit 0
 
 kdialog --title "Welcome to catoulou OS" --msgbox "Enjoy your stay!"
 
-touch /home/kitest/.kitest_done
+touch "$home_dir/.kitest_done"

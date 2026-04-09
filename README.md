@@ -32,7 +32,7 @@ If you already added **`[chaotic-aur]`** and see **`chaotic-aur … 100%`** but 
 
 1. **`pacman.conf`** appends **`[endeavouros]`** with **`SigLevel = PackageRequired`** and **`Include = /etc/pacman.d/endeavouros-mirrorlist`** (after `[extra]`).
 2. **`airootfs/etc/pacman.d/endeavouros-mirrorlist`** ships mirror `Server =` lines inside the live image.
-3. **`packages.d/50-calamares.list`** lists **`endeavouros-mirrorlist`**, **`endeavouros-keyring`**, **`calamares`**, **`kpmcore`** (order matches EndeavourOS: keyring before Calamares).
+3. **`packages.d/50-calamares.list`** lists **`endeavouros-mirrorlist`**, **`endeavouros-keyring`**, **`calamares`**, **`kpmcore`**, **`yaml-cpp`** (keyring before Calamares; **`yaml-cpp`** supplies **`libyaml-cpp.so`** if the installer binary does not pull it in).
 4. **`build-iso.sh`** runs **`scripts/bootstrap-endeavouros-pacman.sh`**: populate EOS keys from GitHub, then **`pacman -U`** the latest **`endeavouros-keyring`** / **`endeavouros-mirrorlist`** from **`EOS_PKG_BASE`** (default: Gigenet US mirror) before `mkarchiso`.
 
 Installer **configuration** is **not** a separate `calamares-config` package here: this repo **is** the config under [`airootfs/etc/calamares/`](airootfs/etc/calamares/). Module files that **also ship inside the `calamares` package** (e.g. `bootloader.conf`, `users.conf`) are staged under [`airootfs/usr/share/kitest/calamares-modules/`](airootfs/usr/share/kitest/calamares-modules/) and copied into `/etc/calamares/modules/` in [`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) so `pacstrap` does not hit **“exists in filesystem”**. If you see hints about a generic “partition” module with no config, ensure these files are present in the built image.
@@ -63,9 +63,11 @@ The ISO still boots using the **standard archiso filenames**:
 - `/boot/vmlinuz-linux`
 - `/boot/initramfs-linux.img`
 
-To keep bootloader entries unchanged, [`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) copies the kernel image from `/usr/lib/modules/*/vmlinuz` into `/boot/vmlinuz-linux` during ISO build.
+To keep bootloader entries unchanged, [`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) copies the kernel image from `/usr/lib/modules/*/vmlinuz` into `/boot/vmlinuz-linux` during ISO build, then runs **`mkinitcpio -p archiso`** so **`/boot/initramfs-linux.img`** exists. Without that step, pacstrap-time hooks may only build **`initramfs-<pkgbase>.img`** (e.g. `initramfs-linux-kitten-cachyos-hardened.img`), while **systemd-boot still references `initramfs-linux.img`** — which causes an immediate return to the boot menu (missing initrd).
 
 **Faster rebuilds (optional):** `./build-iso.sh` reuses existing `linux-kitten-cachyos-hardened*.pkg.tar.zst` in `LOCALREPO_DIR` when `PKGBUILD` + `config` are unchanged (see `.kernel-src-stamp`). Set `KITEST_FORCE_KERNEL_REBUILD=1` to force a full kernel compile. Set `KITEST_SKIP_KERNEL_BUILD=1` only if packages are already in the local repo. Persistent `makepkg` tree: `KITEST_KERNEL_BUILD_DIR` (default `LOCALREPO_DIR/.kernel-build`).
+
+**Important:** the Kitten kernel package `provides=(linux)` and `conflicts=(linux)` so pacstrap does not install the stock Arch `linux` package alongside it (a kernel/initramfs modules mismatch will break boot device detection in initramfs).
 
 **SPICE / QEMU:** `spice-vdagent` and `qemu-guest-agent` are in the package list; do not ship a duplicate `/etc/xdg/autostart/spice-vdagent.desktop` in `airootfs` — the package already installs it.
 
@@ -114,7 +116,7 @@ Rolling base, CI, and “do we fork Arch?” are summarized in [docs/devops.md](
 
 Boot order is always: **firmware (Syslinux / systemd-boot) → Linux → SDDM → Plasma session → Calamares**.
 
-There is **no** Calamares screen before the desktop. The graphical installer is [`calamares`](https://wiki.archlinux.org/title/Calamares) and is started **after login** (see [`airootfs/etc/xdg/autostart/calamares.desktop`](airootfs/etc/xdg/autostart/calamares.desktop)). If you only see a black screen, wait for **SDDM** (or on slow emulation, several minutes), then log in as **`kitest`** (password is **empty** / unset).
+There is **no** Calamares screen before the desktop. The graphical installer is [`calamares`](https://wiki.archlinux.org/title/Calamares) and is started **after login** (see [`airootfs/etc/xdg/autostart/calamares.desktop`](airootfs/etc/xdg/autostart/calamares.desktop)). If you only see a black screen, wait for **SDDM** (or on slow emulation, several minutes), then log in as **`kitest`** (password is **empty** / unset). If you changed the live user at build time, use `KITEST_LIVE_USER`’s value instead.
 
 ### Finding the persistence partition (`KITEST_PERSIST`)
 
@@ -160,6 +162,9 @@ After the build:
 - **Intel CPU + KVM:** QEMU may print `CPUID... svm` — the script uses **`-cpu host,-svm`** by default on non-AMD hosts. Override with **`QEMU_CPU=host`** if needed.
 - **No `/dev/kvm` (TCG):** the guest is **very slow**; the screen may stay black for a long time before SDDM. Prefer **KVM**.
 - **Black screen after boot text:** wait, try **Ctrl+Alt+F2** for a text login, or raise **RAM** (e.g. `MEM=8192 ./qemu-smoke.sh …`).
+- **Kernel log on the host terminal (debug):** `QEMU_EXTRA_ARGS="-serial stdio" ./qemu-smoke.sh out/*.iso` (may interact oddly with the GTK window; use `QEMU_HEADLESS=1` for serial-only).
+- **Network flapping / 0 b/s in QEMU:** the live image masks **cloud-init** and **ModemManager** (both ship with the archiso base set) so **NetworkManager** owns Ethernet without disconnect loops. `virtio-net` is included in the archiso initramfs. If problems persist, try `ping 10.0.2.2` (QEMU user gateway) and check `journalctl -u NetworkManager -b`.
+- **Guest ↔ host (QEMU user networking):** from the guest, the host is **`10.0.2.2`** (ping, HTTP to host services). To reach the **guest from the host** (e.g. SSH after `systemctl start sshd`), forward a host port: `QEMU_HOSTFWD='hostfwd=tcp::2222-:22' ./qemu-smoke.sh out/*.iso` then `ssh -p 2222 user@127.0.0.1`.
 - **“Persistent live” in QEMU (recommended):** let the script create/attach a persistence disk automatically:
 
 ```bash
@@ -197,14 +202,14 @@ Without that disk, use the default **live session** entry. If you see **overlayf
 
 ### Calamares does not appear or no installer window
 
-1. **Log in at SDDM** as **`kitest`** (empty password). Calamares is configured to **autostart after Plasma** ([`calamares.desktop`](airootfs/etc/xdg/autostart/calamares.desktop)). It is **not** the boot splash.
+1. **Log in at SDDM** as **`kitest`** (empty password). Calamares is configured to **autostart after Plasma** ([`calamares.desktop`](airootfs/etc/xdg/autostart/calamares.desktop)). It is **not** the boot splash. If you changed the live user at build time, use `KITEST_LIVE_USER`’s value instead.
 2. Wait ~30 seconds after the desktop loads; if nothing opens, open the **application menu** and search for **Install** / **Calamares**, or run in **Konsole**:
 
    ```bash
    /usr/bin/calamares
    ```
 
-3. If the window fails to start, run **`calamares`** from a terminal and read the error (missing module, config, or Qt display).
+3. If the window fails to start, run **`calamares`** from a terminal and read the error (missing module, config, or Qt display). **`error while loading shared libraries: libyaml-cpp.so.*`** means the live image needs **`yaml-cpp`** installed — it is listed in **`packages.d/50-calamares.list`**; rebuild the ISO after a profile change.
 4. **Welcome** module checks **RAM** (≥ 1 GiB in [`welcome.conf`](airootfs/etc/calamares/modules/welcome.conf)) and **storage** (≥ 4 GiB). Very small test disks may block the wizard until you attach a larger virtual disk.
 5. This image uses **Calamares from the EndeavourOS repository**; behaviour can differ slightly from upstream Calamares. Your job sequence is in [`settings.conf`](airootfs/etc/calamares/settings.conf).
 
@@ -246,7 +251,7 @@ Optional **Flatpak** apps are installed on the **target system** via Calamares (
 The live ISO ships a **Kitten Theme Selector** entry in:
 
 - the **application menu** (search for “Theme”)
-- the **Desktop** (skel shortcut for the `kitest` live user)
+- the **Desktop** (skel shortcut for the live user)
 
 It is implemented by:
 
@@ -292,16 +297,26 @@ flowchart TD
   enableUserEnv --> catppuccinMsg["Show: log out/in for full effect"]
 ```
 
-### Bundling Catppuccin Kvantum themes into the ISO (optional)
+### Bundling Catppuccin Kvantum themes into the ISO
 
-By default the ISO does **not** need Catppuccin assets to boot reliably (Breeze default).
-If you want Catppuccin Kvantum themes available offline in the live session, build with:
+The ISO does **not** need Catppuccin assets to boot reliably (Breeze default), but bundling themes makes the live session theme selector work **offline**.
+
+If you want to **disable** bundling (smaller build / no extra assets), build with:
 
 ```bash
-KITEST_BUNDLE_CATPPUCCIN_KVANTUM=1 sudo ./build-iso.sh
+KITEST_BUNDLE_CATPPUCCIN_KVANTUM=0 sudo ./build-iso.sh
 ```
 
-This clones `catppuccin/kvantum` during ISO build and copies its `themes/` into **`/usr/share/kitten-themes/kvantum/`**.
+Bundled themes are installed into **`/usr/share/kitten-themes/kvantum/`** for user-only application via the theme tools.
+
+#### Reproducible/offline bundling (vendored asset)
+
+For fully reproducible builds without relying on network at build time, you can vendor the Catppuccin Kvantum source archive into the profile so it is available inside the build chroot:
+
+- Place `catppuccin-kvantum.tar.gz` at: `airootfs/usr/share/kitest/assets/catppuccin-kvantum.tar.gz`
+- Optionally add a checksum file next to it: `airootfs/usr/share/kitest/assets/catppuccin-kvantum.tar.gz.sha256` (format: `sha256sum -b <file>`)
+
+During ISO build, `customize_airootfs.sh` will prefer this vendored tarball; otherwise it may attempt a network fetch if `KITEST_ALLOW_NET_ASSETS=1`.
 
 ### Manual Kvantum after login (example):
 

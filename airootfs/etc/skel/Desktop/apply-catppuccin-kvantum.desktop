@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Apply Catppuccin Kvantum (manual)
+Comment=Apply Catppuccin Kvantum theme for this user (no global overrides)
+Exec=/usr/local/bin/kitten-apply-catppuccin-kvantum
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=Settings;DesktopSettings;Qt;
+StartupNotify=true

@@ -90,7 +90,7 @@ case "$choose_mode" in
   catppuccin)
     theme_root="/usr/share/kitten-themes/kvantum"
     if [[ ! -d "$theme_root" ]]; then
-      kdialog --title "$app_title" --error "No bundled themes found at:\\n$theme_root\\n\\nRebuild the ISO with KITEST_BUNDLE_CATPPUCCIN_KVANTUM=1, or install themes manually." 2>/dev/null || true
+      kdialog --title "$app_title" --error "No bundled themes found at:\\n$theme_root\\n\\nRebuild the ISO with KITEST_BUNDLE_CATPPUCCIN_KVANTUM=1 (default), or install themes manually." 2>/dev/null || true
       exit 1
     fi
 

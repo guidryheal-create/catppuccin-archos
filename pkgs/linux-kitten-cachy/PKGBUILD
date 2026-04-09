@@ -522,7 +522,8 @@ _package() {
                 'linux-firmware: firmware images needed for some devices'
                 'modprobed-db: Keeps track of EVERY kernel module that has ever been probed - useful for those of us who make localmodconfig'
                 'scx-scheds: to use sched-ext schedulers')
-    provides=(VIRTUALBOX-GUEST-MODULES WIREGUARD-MODULE KSMBD-MODULE V4L2LOOPBACK-MODULE NTSYNC-MODULE VHBA-MODULE ADIOS-MODULE)
+    provides=(linux VIRTUALBOX-GUEST-MODULES WIREGUARD-MODULE KSMBD-MODULE V4L2LOOPBACK-MODULE NTSYNC-MODULE VHBA-MODULE ADIOS-MODULE)
+    conflicts=(linux)
 
     cd "$_srcname"
 
@@ -547,7 +548,8 @@ _package() {
 _package-headers() {
     pkgdesc="Headers and scripts for building modules for the $pkgdesc kernel"
     depends=('pahole' "${pkgbase}")
-    provides=(LINUX-HEADERS)
+    provides=(linux-headers LINUX-HEADERS)
+    conflicts=(linux-headers)
 
     cd "${_srcname}"
     local builddir="$pkgdir/usr/lib/modules/$(<version)/build"
