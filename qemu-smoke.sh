@@ -21,6 +21,13 @@ Environment:
   QEMU_PERSIST_PATH=...    path when auto-creating (default: alongside ISO, *.persist.img)
   QEMU_PERSIST_KEEP=1      keep existing auto persistence image (default: recreate for clean testing)
 
+  The filesystem label must be exactly KITEST_PERSIST (underscores; not KITTEN_PERSIST or KITEST-PERSIST).
+  Formatting a raw file on the host is not enough: pass QEMU_PERSIST_IMG=... or QEMU_PERSIST=1 so QEMU
+  attaches that disk; otherwise the "persistent live" boot entry has nothing to mount.
+
+  Example — use your own image:
+    QEMU_PERSIST_IMG=/tmp/kitest-persist.img ./qemu-smoke.sh out/kitest-*.iso
+
   QEMU_GPU=virtio          QEMU display device (default: virtio-gl)
   QEMU_GPU=virtio-gl       virtio-vga-gl + gtk GL (often fixes Plasma black screens)
   QEMU_GPU=qxl             QXL (fallback for debugging)

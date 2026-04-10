@@ -23,10 +23,8 @@ systemctl enable systemd-resolved.service
 systemctl disable NetworkManager.service 2>/dev/null || true
 systemctl mask NetworkManager.service 2>/dev/null || true
 
-# -------------------------
-# PACMAN: refresh core/extra DB (needs network during customize; harmless if offline)
-# -------------------------
-pacman -Sy --noconfirm 2>/dev/null || true
+# Do not run pacman -Sy/-S here: syncing the DB without upgrading the pacstrapped root can cause
+# ABI skew (e.g. Calamares missing libyaml-cpp.so.*). Add deps in packages.d/; let mkarchiso stay consistent.
 
 # -------------------------
 # KERNEL: ensure archiso bootloader finds vmlinuz-linux

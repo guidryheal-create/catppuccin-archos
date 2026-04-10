@@ -1,6 +1,6 @@
 Integrated into the profile:
 
-- **`pacman -Sy`** runs in `customize_airootfs.sh` when the build chroot has network (ignored if offline).
+- **`customize_airootfs.sh` does not run `pacman -Sy`** (partial DB sync can skew ABI vs pacstrapped packages, e.g. Calamares / `libyaml-cpp.so`). Add deps in `packages.d/` instead.
 - **Catppuccin Kvantum** is cloned from GitHub during customize, themes go to `/usr/share/Kvantum/themes/`, default **`catppuccin-mocha-mauve`** for new users (`KITEST_KVANTUM_THEME` to override).
 - **QEMU VFIO**: see `qemu-smoke.sh` (`QEMU_VFIO_GPU`, `QEMU_TRY_AMD_VFIO`).
 
