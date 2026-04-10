@@ -62,7 +62,7 @@ Notes:
 ## Conventions here
 
 - **No global Tor/SOCKS proxy** in `/etc/environment`; optional Tor can be offered later (e.g. Calamares bundle) per user.
-- **NM + iwd**: `systemd-networkd` is masked; `NetworkManager.conf` sets `wifi.backend=iwd`.
+- **Live networking:** `systemd-networkd` + `systemd-resolved` (see `airootfs/etc/systemd/network/`); **NetworkManager** is masked on the live image. `airootfs/etc/NetworkManager/NetworkManager.conf` still applies if NM is enabled later (e.g. installed system via Calamares).
 - Do **not** edit the user’s plan file in `.cursor/plans/` unless they ask.
 
 ## Optional: use this skill in Cursor

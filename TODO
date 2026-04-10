@@ -43,7 +43,7 @@
 * [x] remove `dhcpcd` (not in `packages.x86_64`; profile uses NM + iwd)
 * [x] keep `wpa_supplicant` (reliability; Calamares/NM Wi‑Fi during install)
 
-* [x] **Live ISO:** `systemd-networkd` masked; `NetworkManager.conf` uses `wifi.backend=iwd` (see `customize_airootfs.sh`, `airootfs/etc/NetworkManager/`).
+* [x] **Live ISO:** `systemd-networkd` + `systemd-resolved` enabled; **NetworkManager** masked on live (see `customize_airootfs.sh`). Wi‑Fi on live / `iwd` integration is deferred; Calamares can still enable NM on the installed system.
 
 👉 Goal: **no network bugs on boot**
 
@@ -306,3 +306,27 @@ Right now you should aim for:
 - [x] Split build into helper scripts (`scripts/build-kernel.sh`, `scripts/prepare-repo.sh`, `scripts/gen-packages.sh`)
 - [x] Reuse `WORK_DIR` by default (incremental `mkarchiso`), with `KITEST_CLEAN=airootfs|work`
 - [ ] Document and test a “warm cache offline” build path (`KITEST_OFFLINE=1`) end-to-end
+
+
+
+
+'''
+ #dc8a78 #dd7878 #ea76cb  #8839ef #d20f39 
+#e64553 #fe640b #df8e1d #40a02b #179299 #04a5e5 
+#209fb5 #1e66f5 #7287fd #4c4f69 #5c5f77 #6c6f85 
+#7c7f93 #7c7f93 #8c8fa1 #9ca0b0 #acb0be #bcc0cc 
+#ccd0da #eff1f5 #e6e9ef #dce0e8
+
+Rosewater Flamingo				
+Pink Mauve	Red	Maroon		
+Peach Yellow Green	Teal		
+Sky	Sapphire Blue Lavender		
+Text Subtext 1 Subtext 0 Overlay 2	
+Overlay 1 Overlay 0	
+Surface 2 Surface 1	
+Surface 0 Base	
+Mantle	Crust
+'''
+
+
+apply some color based on theme during iso building and calamares

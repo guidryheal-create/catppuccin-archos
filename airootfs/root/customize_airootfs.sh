@@ -12,10 +12,16 @@ if [[ -d /usr/share/kitest/calamares-modules ]]; then
 fi
 
 # -------------------------
-# NETWORK: NetworkManager + wpa_supplicant (avoid fighting systemd-networkd)
+# NETWORK: systemd-networkd + systemd-resolved (matches airootfs/etc/systemd/network/*.network)
+# Live session does not use NetworkManager (Calamares can still enable NM on the installed system).
 # -------------------------
-systemctl mask systemd-networkd.service
-systemctl mask systemd-networkd-wait-online.service
+systemctl unmask systemd-networkd.service 2>/dev/null || true
+systemctl unmask systemd-networkd-wait-online.service 2>/dev/null || true
+systemctl enable systemd-networkd.service
+systemctl enable systemd-resolved.service
+
+systemctl disable NetworkManager.service 2>/dev/null || true
+systemctl mask NetworkManager.service 2>/dev/null || true
 
 # -------------------------
 # PACMAN: refresh core/extra DB (needs network during customize; harmless if offline)
@@ -181,11 +187,10 @@ chmod 440 "/etc/sudoers.d/${LIVE_USER}"
 # -------------------------
 # SERVICES (slim live: optional stacks install via Calamares on target)
 # -------------------------
-systemctl enable NetworkManager
 systemctl enable sddm
 systemctl enable qemu-guest-agent 2>/dev/null || true
 
-# NETWORK: avoid services that fight NetworkManager on the live image (common in QEMU).
+# NETWORK: avoid services that fight systemd-networkd on the live image (common in QEMU).
 # - cloud-init (pulled by archiso base metapackage) can reapply network config at boot.
 # - ModemManager probes serial/modem devices and often causes virtio ethernet flap (connect/disconnect).
 for s in cloud-init-local cloud-init cloud-config cloud-final; do

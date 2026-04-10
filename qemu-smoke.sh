@@ -148,14 +148,15 @@ args=(
 )
 
 # User networking: guest can reach host at 10.0.2.2; optional QEMU_HOSTFWD for host->guest (e.g. SSH).
-net_user_args="id=net0"
+net_user_args="id=net0,net=10.0.2.0/24,dhcpstart=10.0.2.15"
+
 if [[ -n "${QEMU_HOSTFWD:-}" ]]; then
-  net_user_args="id=net0,${QEMU_HOSTFWD}"
+  net_user_args="${net_user_args},${QEMU_HOSTFWD}"
 fi
+
 args+=(
   -netdev "user,${net_user_args}"
-  -device virtio-net-pci,netdev=net0
-  -device virtio-rng-pci
+  -device e1000,netdev=net0
 )
 
 require_cmd() {
