@@ -36,7 +36,8 @@ Environment:
 
   QEMU_EXTRA_ARGS=...      extra qemu args (quoted string), e.g. -serial stdio for kernel log on this terminal
 
-  QEMU_HOSTFWD=...         optional extra -netdev user options after id=net0 (comma-separated), e.g.
+  QEMU_BRIDGE=br0          use host bridge instead of user NAT (needs br0 + /etc/qemu/bridge.conf; ping works)
+  QEMU_HOSTFWD=...         with user NAT only: comma-separated extra netdev opts, e.g.
                              hostfwd=tcp::2222-:22   (host 127.0.0.1:2222 -> guest :22 for ssh)
                              hostfwd=tcp::2222-:22,hostfwd=tcp::8443-:443
 EOF
@@ -154,17 +155,15 @@ args=(
   -boot order=d
 )
 
-# User networking: guest can reach host at 10.0.2.2; optional QEMU_HOSTFWD for host->guest (e.g. SSH).
-net_user_args="id=net0,net=10.0.2.0/24,dhcpstart=10.0.2.15"
-
-if [[ -n "${QEMU_HOSTFWD:-}" ]]; then
-  net_user_args="${net_user_args},${QEMU_HOSTFWD}"
+# Networking: default user NAT (guest host at 10.0.2.2); optional QEMU_BRIDGE=br0 for real bridge.
+# ICMP often fails with user NAT; use curl/dig for checks, or bridge. See network_issues.md.
+if [[ -n "${QEMU_BRIDGE:-}" ]]; then
+  args+=(-netdev "bridge,br=${QEMU_BRIDGE},id=net0" -device virtio-net-pci,netdev=net0)
+else
+  _qemu_netdev="user,id=net0"
+  [[ -n "${QEMU_HOSTFWD:-}" ]] && _qemu_netdev+=",${QEMU_HOSTFWD}"
+  args+=(-netdev "$_qemu_netdev" -device virtio-net-pci,netdev=net0)
 fi
-
-args+=(
-  -netdev "user,${net_user_args}"
-  -device e1000,netdev=net0
-)
 
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -206,12 +205,12 @@ if [[ -n "$persist_img" ]]; then
   fi
 
   if [[ $persist_enabled -eq 1 && ! -e "$persist_img" ]]; then
-    if ! mk_persist_img "$persist_img" "${QEMU_PERSIST_SIZE:-8G}"; then
+    if ! mk_persist_img "$persist_img" "${QEMU_PERSIST_SIZE:-16G}"; then
       # If ISO directory isn't writable (common when ISO owned by root), fall back to /tmp.
       persist_img="/tmp/${iso_base}.persist.img"
       persist_auto=1
       [[ "${QEMU_PERSIST_KEEP:-0}" != 1 ]] && rm -f -- "$persist_img"
-      mk_persist_img "$persist_img" "${QEMU_PERSIST_SIZE:-8G}"
+      mk_persist_img "$persist_img" "${QEMU_PERSIST_SIZE:-16G}"
     fi
   fi
 

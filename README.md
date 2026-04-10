@@ -230,8 +230,10 @@ After the build:
 - **No `/dev/kvm` (TCG):** the guest is **very slow**; the screen may stay black for a long time before SDDM. Prefer **KVM**.
 - **Black screen after boot text:** wait, try **Ctrl+Alt+F2** for a text login, or raise **RAM** (e.g. `MEM=8192 ./qemu-smoke.sh …`).
 - **Kernel log on the host terminal (debug):** `QEMU_EXTRA_ARGS="-serial stdio" ./qemu-smoke.sh out/*.iso` (may interact oddly with the GTK window; use `QEMU_HEADLESS=1` for serial-only).
-- **Network flapping / 0 b/s in QEMU:** the live image masks **cloud-init** and **ModemManager** (both ship with the archiso base set) so they do not fight **systemd-networkd**. Ethernet is configured via **`/etc/systemd/network/`** (e.g. `20-ethernet.network`); **systemd-resolved** handles DNS (with a **10.0.2.3** fallback for QEMU user networking in `resolved.conf.d`). `virtio-net` is included in the archiso initramfs. If problems persist, try `ping 10.0.2.2` (QEMU user gateway) and check `journalctl -u systemd-networkd -b` and `resolvectl status`.
-- **Guest ↔ host (QEMU user networking):** from the guest, the host is **`10.0.2.2`** (ping, HTTP to host services). To reach the **guest from the host** (e.g. SSH after `systemctl start sshd`), forward a host port: `QEMU_HOSTFWD='hostfwd=tcp::2222-:22' ./qemu-smoke.sh out/*.iso` then `ssh -p 2222 user@127.0.0.1`.
+- **Live networking:** **NetworkManager** + **systemd-resolved** (Ethernet/Wi‑Fi in Plasma via **plasma-nm**). **systemd-networkd** is **masked** on the live image so it does not fight NM. **cloud-init** and **ModemManager** stay masked to reduce QEMU flapping. **`/etc/resolv.conf`** symlinks to the **systemd-resolved stub**; public **FallbackDNS** is in `airootfs/etc/systemd/resolved.conf.d/99-qemu-fallback.conf`. If something fails, check `journalctl -u NetworkManager -b` and `resolvectl status`.
+- **QEMU user NAT vs ping:** with **`-netdev user`**, **ICMP (`ping`) often fails** even when **HTTPS/DNS work** — use **`curl`** / **`dig`** / **`pacman`** to verify connectivity. Details: [`network_issues.md`](network_issues.md). For **ping** and full LAN behavior, use a **host bridge** (see below).
+- **Guest ↔ host (QEMU user networking):** from the guest, the host is **`10.0.2.2`** (TCP/HTTP to host services; ping may not work). To reach the **guest from the host** (e.g. SSH after `systemctl start sshd`), forward a host port: `QEMU_HOSTFWD='hostfwd=tcp::2222-:22' ./qemu-smoke.sh out/*.iso` then `ssh -p 2222 user@127.0.0.1`.
+- **QEMU bridge networking:** if the host has a Linux bridge (e.g. **`br0`**) and **`/etc/qemu/bridge.conf`** allows it, run `QEMU_BRIDGE=br0 ./qemu-smoke.sh out/*.iso` instead of user NAT.
 - **“Persistent live” in QEMU (recommended):** let the script create/attach a persistence disk automatically:
 
 ```bash
@@ -276,7 +278,7 @@ Without that disk, use the default **live session** entry. If you see **overlayf
    /usr/bin/calamares
    ```
 
-3. If the window fails to start, run **`calamares`** from a terminal and read the error (missing module, config, or Qt display). **`error while loading shared libraries: libyaml-cpp.so.*`** means the live image needs **`yaml-cpp`** installed — it is listed in **`packages.d/50-calamares.list`**; rebuild the ISO after a profile change.
+3. If the window fails to start, run **`calamares`** from a terminal and read the error (missing module, config, or Qt display). **`error while loading shared libraries: libyaml-cpp.so.*`** means the live image needs **`yaml-cpp`** installed — it is listed in **`packages.d/50-calamares.list`**; rebuild the ISO after a profile change. On the live system you can confirm with **`pacman -Q yaml-cpp`** and **`ldd /usr/bin/calamares | grep yaml`** (should list **`libyaml-cpp.so`**).
 4. **Welcome** module checks **RAM** (≥ 1 GiB in [`welcome.conf`](airootfs/etc/calamares/modules/welcome.conf)) and **storage** (≥ 4 GiB). Very small test disks may block the wizard until you attach a larger virtual disk.
 5. This image uses **Calamares from the EndeavourOS repository**; behaviour can differ slightly from upstream Calamares. Your job sequence is in [`settings.conf`](airootfs/etc/calamares/settings.conf).
 

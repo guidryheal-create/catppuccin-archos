@@ -2,6 +2,7 @@
 plasma-meta
 plasma-x11-session
 networkmanager
+plasma-nm
 sddm
 sddm-kcm
 konsole

@@ -12,16 +12,21 @@ if [[ -d /usr/share/kitest/calamares-modules ]]; then
 fi
 
 # -------------------------
-# NETWORK: systemd-networkd + systemd-resolved (matches airootfs/etc/systemd/network/*.network)
-# Live session does not use NetworkManager (Calamares can still enable NM on the installed system).
+# NETWORK: NetworkManager on live (Ethernet + Wi‑Fi in Plasma); systemd-resolved for DNS.
+# Do not run systemd-networkd alongside NM (they fight for interfaces). Files under
+# airootfs/etc/systemd/network/ apply only if networkd is enabled later (e.g. target chroot).
 # -------------------------
-systemctl unmask systemd-networkd.service 2>/dev/null || true
-systemctl unmask systemd-networkd-wait-online.service 2>/dev/null || true
-systemctl enable systemd-networkd.service
+systemctl disable systemd-networkd.service 2>/dev/null || true
+systemctl mask systemd-networkd.service 2>/dev/null || true
+systemctl disable systemd-networkd-wait-online.service 2>/dev/null || true
+systemctl mask systemd-networkd-wait-online.service 2>/dev/null || true
+
+systemctl unmask systemd-resolved.service 2>/dev/null || true
 systemctl enable systemd-resolved.service
 
-systemctl disable NetworkManager.service 2>/dev/null || true
-systemctl mask NetworkManager.service 2>/dev/null || true
+systemctl unmask NetworkManager.service 2>/dev/null || true
+systemctl enable NetworkManager.service
+systemctl enable NetworkManager-wait-online.service 2>/dev/null || true
 
 # Do not run pacman -Sy/-S here: syncing the DB without upgrading the pacstrapped root can cause
 # ABI skew (e.g. Calamares missing libyaml-cpp.so.*). Add deps in packages.d/; let mkarchiso stay consistent.
@@ -188,7 +193,7 @@ chmod 440 "/etc/sudoers.d/${LIVE_USER}"
 systemctl enable sddm
 systemctl enable qemu-guest-agent 2>/dev/null || true
 
-# NETWORK: avoid services that fight systemd-networkd on the live image (common in QEMU).
+# NETWORK: avoid services that fight NetworkManager on the live image (common in QEMU).
 # - cloud-init (pulled by archiso base metapackage) can reapply network config at boot.
 # - ModemManager probes serial/modem devices and often causes virtio ethernet flap (connect/disconnect).
 for s in cloud-init-local cloud-init cloud-config cloud-final; do

@@ -8,5 +8,5 @@ Icon=calamares
 Terminal=false
 StartupNotify=true
 Categories=Qt;System;
-Hidden=true
-X-GNOME-Autostart-enabled=false
+Hidden=false
+X-GNOME-Autostart-enabled=true

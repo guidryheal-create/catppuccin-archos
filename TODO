@@ -43,7 +43,7 @@
 * [x] remove `dhcpcd` (not in `packages.x86_64`; profile uses NM + iwd)
 * [x] keep `wpa_supplicant` (reliability; Calamares/NM Wi‑Fi during install)
 
-* [x] **Live ISO:** `systemd-networkd` + `systemd-resolved` enabled; **NetworkManager** masked on live (see `customize_airootfs.sh`). Wi‑Fi on live / `iwd` integration is deferred; Calamares can still enable NM on the installed system.
+* [x] **Live ISO:** **NetworkManager** + **systemd-resolved** on live; **systemd-networkd** masked (see `customize_airootfs.sh`). **plasma-nm** for Wi‑Fi in Plasma; Calamares still enables NM on the installed system.
 
 👉 Goal: **no network bugs on boot**
 
