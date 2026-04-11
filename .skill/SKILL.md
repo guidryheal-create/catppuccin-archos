@@ -24,7 +24,7 @@ This repo supports a layered workflow (kernel → local repo → ISO) so you don
   - `sudo ./scripts/prepare-repo.sh`
 - **Build ISO (often):**
   - `sudo ./build-iso.sh`
-  - or ISO-only: `sudo ./scripts/build-iso-only.sh` (runs package list generation + `mkarchiso` only)
+  - or ISO-only: `sudo ./scripts/build-iso-only.sh` (EOS key bootstrap if needed, `prepare-repo.sh`, `gen-packages.sh` + `mkarchiso`; no kernel rebuild; honors `KITEST_THEME`)
 
 ### WORK_DIR reuse (mkarchiso cache)
 

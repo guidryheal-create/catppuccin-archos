@@ -8,10 +8,13 @@ LOCALREPO_DIR="${LOCALREPO_DIR:-/var/tmp/kitest-localrepo}"
 WORKDIR="${WORKDIR:-/var/tmp/calamares-aur-build}"
 
 if [[ "$(id -u)" -ne 0 ]]; then
-  exec sudo env LOCALREPO_DIR="$LOCALREPO_DIR" WORKDIR="$WORKDIR" bash "$0" "$@"
+  exec sudo env \
+    LOCALREPO_DIR="$LOCALREPO_DIR" WORKDIR="$WORKDIR" \
+    BUILD_USER="${SUDO_USER:-${USER:-}}" \
+    bash "$0" "$@"
 fi
 
-build_user="${SUDO_USER:-${BUILD_USER:-nobody}}"
+build_user="${BUILD_USER:-${SUDO_USER:-${USER:-nobody}}}"
 if ! id "$build_user" &>/dev/null; then
   echo "Build user '$build_user' not found; set SUDO_USER or BUILD_USER." >&2
   exit 1
@@ -28,11 +31,17 @@ fi
 cd calamares-aur
 runuser -u "$build_user" -- makepkg -sf --noconfirm
 shopt -s nullglob
+installed=0
 for p in calamares-*.pkg.tar.zst; do
   install -Dm644 "$p" "$LOCALREPO_DIR/localpkgs/$p"
   chown root:root "$LOCALREPO_DIR/localpkgs/$p"
   echo "Installed: $LOCALREPO_DIR/localpkgs/$p" >&2
+  installed=$((installed + 1))
 done
 shopt -u nullglob
+if [[ "$installed" -eq 0 ]]; then
+  echo "ERROR: makepkg produced no calamares-*.pkg.tar.zst in $(pwd)" >&2
+  exit 1
+fi
 echo "Next: bash $PROFILE_DIR/scripts/prepare-repo.sh" >&2
 echo "Then edit packages.d/50-calamares.list to use kitten-local calamares (and drop EOS calamares if appropriate)." >&2

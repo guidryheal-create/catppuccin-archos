@@ -15,6 +15,11 @@ if [[ "$(id -u)" -ne 0 ]]; then
   exit 1
 fi
 
+if [[ "${KITEST_OFFLINE:-0}" == "1" ]]; then
+  echo "KITEST_OFFLINE=1: bootstrap-endeavouros-pacman.sh needs network (curl + EOS mirror). Unset KITEST_OFFLINE or install endeavouros-keyring/mirrorlist manually." >&2
+  exit 1
+fi
+
 if ! command -v curl >/dev/null 2>&1; then
   pacman -S --needed --noconfirm curl
 fi
