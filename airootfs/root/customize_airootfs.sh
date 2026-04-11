@@ -14,12 +14,33 @@ fi
 # -------------------------
 # CALAMARES: ensure libyaml-cpp is resolvable (EOS binary may not depend on yaml-cpp explicitly).
 # Do not run pacman -Sy/-Syu here — partial DB sync can skew ABI vs pacstrapped packages (e.g. libyaml-cpp).
+#
+# EndeavourOS calamares is often linked against libyaml-cpp.so.0.8 while [extra] may ship yaml-cpp 0.9
+# (libyaml-cpp.so.0.9 only). In that case pacman -S yaml-cpp is not enough — downgrade from ALA.
 # -------------------------
+_calamares_need_yaml_cpp_08() {
+  ldd /usr/bin/calamares 2>/dev/null | grep -F 'libyaml-cpp.so.0.8' | grep -q 'not found'
+}
+
 if [[ -x /usr/bin/calamares ]]; then
   if ! pacman -Q yaml-cpp &>/dev/null; then
     echo "WARNING: yaml-cpp not installed; installing from frozen pacstrap DBs..." >&2
     pacman -S --needed --noconfirm yaml-cpp || {
       echo "ERROR: could not install yaml-cpp (needed for Calamares)." >&2
+      exit 1
+    }
+  fi
+  if _calamares_need_yaml_cpp_08; then
+    if [[ "${KITEST_OFFLINE:-0}" == "1" ]]; then
+      echo "ERROR: Calamares needs libyaml-cpp.so.0.8 but KITEST_OFFLINE=1; cannot fetch Arch Linux Archive package." >&2
+      echo "Use scripts/build-calamares-local.sh (AUR) against current yaml-cpp, or provide yaml-cpp 0.8 in [kitten-local]." >&2
+      exit 1
+    fi
+    _ala_yaml='https://archive.archlinux.org/packages/y/yaml-cpp/yaml-cpp-0.8.0-3-x86_64.pkg.tar.zst'
+    echo "NOTICE: Calamares is linked to libyaml-cpp.so.0.8; replacing yaml-cpp with ALA 0.8.0-3 (EOS vs [extra] 0.9)." >&2
+    # pacman fetches the URL (no curl needed in the live rootfs).
+    pacman -U --noconfirm "$_ala_yaml" || {
+      echo "ERROR: pacman -U yaml-cpp 0.8.0-3 from ALA failed (network or signature?)." >&2
       exit 1
     }
   fi

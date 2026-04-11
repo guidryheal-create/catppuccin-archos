@@ -3,7 +3,8 @@
 # Installer UI config lives in airootfs/etc/calamares/ (this profile, not calamares-config).
 endeavouros-mirrorlist
 endeavouros-keyring
-# yaml-cpp before calamares so pacstrap resolves the SONAME EndeavourOS calamares was built against.
+# yaml-cpp before calamares. [extra] may ship 0.9 while EOS calamares still links libyaml-cpp.so.0.8;
+# customize_airootfs.sh then replaces yaml-cpp from the Arch Linux Archive (needs network during ISO build).
 yaml-cpp
 kpmcore
 calamares
