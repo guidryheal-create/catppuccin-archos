@@ -2,6 +2,13 @@
 # Optional: build Calamares from AUR into LOCALREPO_DIR/localpkgs for [kitten-local].
 # Requires: base-devel, git, network. Run on Arch (or in an Arch container).
 # After build: scripts/prepare-repo.sh, then adjust packages.d (remove EOS calamares if desired).
+#
+# Stable upstream sources: https://codeberg.org/Calamares/calamares (tags). A vendored tree may exist
+# under scripts/calamares-3.4.2/ for reference; this script still uses the AUR PKGBUILD so the build
+# matches current Arch/Qt deps. Install the resulting package with pacman (binaries under /usr/bin),
+# not by copying a binary into /etc.
+#
+# You do not need yay on the ISO to run Calamares; yay is only for interactive AUR work on a dev host.
 set -euo pipefail
 PROFILE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOCALREPO_DIR="${LOCALREPO_DIR:-/var/tmp/kitest-localrepo}"

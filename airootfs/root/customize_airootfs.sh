@@ -31,26 +31,54 @@ if [[ -x /usr/bin/calamares ]]; then
     }
   fi
   if _calamares_need_yaml_cpp_08; then
-    if [[ "${KITEST_OFFLINE:-0}" == "1" ]]; then
-      echo "ERROR: Calamares needs libyaml-cpp.so.0.8 but KITEST_OFFLINE=1; cannot fetch Arch Linux Archive package." >&2
-      echo "Use scripts/build-calamares-local.sh (AUR) against current yaml-cpp, or provide yaml-cpp 0.8 in [kitten-local]." >&2
+    # EOS calamares + [extra] yaml-cpp 0.9: install yaml-cpp 0.8.0-3 (last ALA build with libyaml-cpp.so.0.8).
+    # mkarchiso chroots (e.g. Docker --privileged) often have no usable pacman-keyring during customize; signed
+    # `pacman -U https://...` then fails. Use a one-shot pacman.conf with SigLevel=Never for this package only.
+    _yaml_vendor=/root/yaml-cpp-0.8.0-3-x86_64.pkg.tar.zst
+    _yaml_ala='https://archive.archlinux.org/packages/y/yaml-cpp/yaml-cpp-0.8.0-3-x86_64.pkg.tar.zst'
+    _yaml_src=
+    if [[ -f "$_yaml_vendor" ]]; then
+      _yaml_src="$_yaml_vendor"
+      echo "NOTICE: Calamares needs libyaml-cpp.so.0.8; installing vendored $_yaml_vendor (EOS vs [extra] 0.9)." >&2
+    elif [[ "${KITEST_OFFLINE:-0}" == "1" ]]; then
+      echo "ERROR: Calamares needs libyaml-cpp.so.0.8 but KITEST_OFFLINE=1 and $_yaml_vendor is missing." >&2
+      echo "Run: bash scripts/fetch-yaml-cpp08-vendor.sh   (copies ALA .pkg.tar.zst into airootfs/root/), or use build-calamares-local.sh." >&2
       exit 1
+    else
+      _yaml_src="$_yaml_ala"
+      echo "NOTICE: Calamares is linked to libyaml-cpp.so.0.8; replacing yaml-cpp with ALA 0.8.0-3 (EOS vs [extra] 0.9)." >&2
     fi
-    _ala_yaml='https://archive.archlinux.org/packages/y/yaml-cpp/yaml-cpp-0.8.0-3-x86_64.pkg.tar.zst'
-    echo "NOTICE: Calamares is linked to libyaml-cpp.so.0.8; replacing yaml-cpp with ALA 0.8.0-3 (EOS vs [extra] 0.9)." >&2
-    # pacman fetches the URL (no curl needed in the live rootfs).
-    pacman -U --noconfirm "$_ala_yaml" || {
-      echo "ERROR: pacman -U yaml-cpp 0.8.0-3 from ALA failed (network or signature?)." >&2
+    _pacman_yaml=/tmp/kitest-pacman-yaml-cpp.conf
+    # Minimal options: same paths as live root; disable signatures for this downgrade only.
+    cat >"$_pacman_yaml" <<'EOF'
+[options]
+RootDir = /
+DBPath = /var/lib/pacman/
+CacheDir = /var/cache/pacman/pkg/
+LogFile = /var/log/pacman.log
+GPGDir = /etc/pacman.d/gnupg/
+HookDir = /etc/pacman.d/hooks/
+HoldPkg = pacman glibc
+Architecture = auto
+ParallelDownloads = 5
+SigLevel = Never
+LocalFileSigLevel = Never
+RemoteFileSigLevel = Never
+EOF
+    pacman -U --noconfirm --config "$_pacman_yaml" "$_yaml_src" || {
+      echo "ERROR: pacman -U yaml-cpp 0.8.0-3 failed (network, cache, or disk?)." >&2
+      echo "Tip: vendor the package (no keyring needed): bash scripts/fetch-yaml-cpp08-vendor.sh on the build host." >&2
+      rm -f "$_pacman_yaml"
       exit 1
     }
+    rm -f "$_pacman_yaml"
   fi
+  # Do not run `pacman -S yaml-cpp` here: [extra] may upgrade 0.8 back to 0.9 and break EOS calamares again.
   if ldd /usr/bin/calamares 2>/dev/null | grep -q 'libyaml-cpp\.so.*not found'; then
-    pacman -S --needed --noconfirm yaml-cpp || true
-    if ldd /usr/bin/calamares 2>/dev/null | grep -q 'libyaml-cpp\.so.*not found'; then
-      echo "ERROR: /usr/bin/calamares still missing libyaml-cpp after yaml-cpp install (ABI skew?)." >&2
-      ldd /usr/bin/calamares 2>/dev/null | grep yaml || true
-      exit 1
-    fi
+    echo "ERROR: /usr/bin/calamares still missing libyaml-cpp (wrong package? Arch ships this in 'yaml-cpp', not 'libyaml-cpp')." >&2
+    ldd /usr/bin/calamares 2>/dev/null | grep yaml || true
+    pacman -Q yaml-cpp 2>/dev/null || true
+    exit 1
   fi
 fi
 
