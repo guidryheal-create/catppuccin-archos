@@ -45,6 +45,7 @@ ldns
 less
 lftp
 libfido2
+libsodium
 libusb-compat
 linux-atm
 linux-firmware
