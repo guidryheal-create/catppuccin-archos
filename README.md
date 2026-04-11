@@ -32,10 +32,18 @@ If you already added **`[chaotic-aur]`** and see **`chaotic-aur … 100%`** but 
 
 1. **`pacman.conf`** appends **`[endeavouros]`** with **`SigLevel = PackageRequired`** and **`Include = /etc/pacman.d/endeavouros-mirrorlist`** (after `[extra]`).
 2. **`airootfs/etc/pacman.d/endeavouros-mirrorlist`** ships mirror `Server =` lines inside the live image.
-3. **`packages.d/50-calamares.list`** lists **`endeavouros-mirrorlist`**, **`endeavouros-keyring`**, **`calamares`**, **`kpmcore`**, **`yaml-cpp`** (keyring before Calamares; **`yaml-cpp`** supplies **`libyaml-cpp.so`** if the installer binary does not pull it in). Avoid **`pacman -Sy`** inside **`customize_airootfs.sh`**: syncing the DB without upgrading the pacstrapped root can cause missing or wrong SONAME errors at Calamares runtime.
+3. **`packages.d/50-calamares.list`** lists **`endeavouros-mirrorlist`**, **`endeavouros-keyring`**, **`yaml-cpp`** (before **`calamares`**), **`kpmcore`**, **`calamares`**. The usual **first** failure mode is **`error: target not found: calamares`** (repo / sync / keys / network), not **`yaml-cpp`**: **`yaml-cpp`** matters when the **`calamares`** binary is already installed but **`ldd`** shows a missing **`libyaml-cpp.so`**. **`customize_airootfs.sh`** verifies **`ldd`** and installs **`yaml-cpp`** from frozen DBs if needed (no **`pacman -Sy`** there). **Persistent live** overlays can strand an old root without **`yaml-cpp`** while **`calamares`** updates: recreate the persist image or **`pacman -S yaml-cpp`** in the live session.
 4. **`build-iso.sh`** runs **`scripts/bootstrap-endeavouros-pacman.sh`**: populate EOS keys from GitHub, then **`pacman -U`** the latest **`endeavouros-keyring`** / **`endeavouros-mirrorlist`** from **`EOS_PKG_BASE`** (default: Gigenet US mirror) before `mkarchiso`.
 
 Installer **configuration** is **not** a separate `calamares-config` package here: this repo **is** the config under [`airootfs/etc/calamares/`](airootfs/etc/calamares/). Module files that **also ship inside the `calamares` package** (e.g. `bootloader.conf`, `users.conf`) are staged under [`airootfs/usr/share/kitest/calamares-modules/`](airootfs/usr/share/kitest/calamares-modules/) and copied into `/etc/calamares/modules/` in [`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) so `pacstrap` does not hit **“exists in filesystem”**. If you see hints about a generic “partition” module with no config, ensure these files are present in the built image.
+
+### Package lists (`packages.d` vs `packages.x86_64`)
+
+**Edit the fragments** under [`packages.d/`](packages.d/) (for example [`packages.d/50-calamares.list`](packages.d/50-calamares.list)). Running **`build-iso.sh`** invokes [`scripts/gen-packages.sh`](scripts/gen-packages.sh), which **regenerates** [`packages.x86_64`](packages.x86_64). Do not treat `packages.x86_64` as the source of truth unless you are only inspecting the merged output.
+
+### Optional: local Calamares in `[kitten-local]`
+
+To build Calamares from the [AUR](https://aur.archlinux.org/packages/calamares) into **`[kitten-local]`** (and optionally stop using the EndeavourOS binary), see [`scripts/build-calamares-local.sh`](scripts/build-calamares-local.sh). After a successful build, run **`scripts/prepare-repo.sh`**, remove **`calamares`** from the EndeavourOS flow in **`packages.d/50-calamares.list`**, and add **`calamares`** next to your other **`[kitten-local]`** packages (see [`pacman.conf`](pacman.conf)).
 
 ## Build on Arch (native)
 
@@ -278,7 +286,9 @@ Without that disk, use the default **live session** entry. If you see **overlayf
    /usr/bin/calamares
    ```
 
-3. If the window fails to start, run **`calamares`** from a terminal and read the error (missing module, config, or Qt display). **`error while loading shared libraries: libyaml-cpp.so.*`** means the live image needs **`yaml-cpp`** installed — it is listed in **`packages.d/50-calamares.list`**; rebuild the ISO after a profile change. On the live system you can confirm with **`pacman -Q yaml-cpp`** and **`ldd /usr/bin/calamares | grep yaml`** (should list **`libyaml-cpp.so`**).
+3. If the window fails to start, run **`calamares`** from a terminal and read the error (missing module, config, or Qt display). Treat **`pacman`** errors separately from **dynamic linker** errors:
+   - **`error: target not found: calamares`** (e.g. **`pacman -S calamares`** or **`pacman -Ss calamares`** showing nothing): Calamares is **not** in **`[core]`** / **`[extra]`**. Pacman only sees it if **`[endeavouros]`** is enabled in **`/etc/pacman.conf`**, **`/etc/pacman.d/endeavouros-mirrorlist`** exists, and the sync DB is present (**`ls /var/lib/pacman/sync/endeavouros.db*`**). On the live system use **`sudo pacman -Sy`** (needs working **HTTPS** to an EOS mirror — in QEMU user networking, **`ping`** may fail while **`pacman`** still works; see **`network_issues.md`**). If DB sync fails with **PGP** errors, run **`sudo pacman-key --populate`** (imports keyrings under **`/usr/share/pacman/keyrings/`**, including EndeavourOS) and retry. **`pacman -Q calamares`** should succeed on a profile-built ISO that finished **`pacstrap`** successfully.
+   - **`error while loading shared libraries: libyaml-cpp.so.*`** when **running** **`/usr/bin/calamares`**: the **`calamares`** package is present but a runtime dependency is missing; install **`yaml-cpp`** (listed in **`packages.d/50-calamares.list`**) and rebuild. Confirm with **`pacman -Q yaml-cpp`** and **`ldd /usr/bin/calamares | grep yaml`**.
 4. **Welcome** module checks **RAM** (≥ 1 GiB in [`welcome.conf`](airootfs/etc/calamares/modules/welcome.conf)) and **storage** (≥ 4 GiB). Very small test disks may block the wizard until you attach a larger virtual disk.
 5. This image uses **Calamares from the EndeavourOS repository**; behaviour can differ slightly from upstream Calamares. Your job sequence is in [`settings.conf`](airootfs/etc/calamares/settings.conf).
 

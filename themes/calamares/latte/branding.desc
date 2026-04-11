@@ -1,18 +1,44 @@
+# SPDX-FileCopyrightText: no
+# SPDX-License-Identifier: CC0-1.0
+# Catppuccin Latte-inspired Calamares colors (Kitest theme: latte)
 ---
 componentName: kitten
+
+welcomeStyleCalamares: false
+welcomeExpandingLogo: true
+
+windowExpanding: normal
+windowSize: 1024px,735px
+windowPlacement: center
+
+sidebar: widget
+navigation: widget
 
 strings:
   productName: "Kitest OS"
   shortProductName: "Kitest"
   version: "rolling"
+  shortVersion: "rolling"
+  versionedName: "Kitest OS (latte)"
+  shortVersionedName: "Kitest"
+  bootloaderEntryName: "Kitest OS"
   productUrl: "https://archlinux.org"
   supportUrl: "https://wiki.archlinux.org"
+  knownIssuesUrl: ""
   releaseNotesUrl: "https://wiki.archlinux.org"
+  donateUrl: ""
 
 images:
-  productIcon: "logo.png"
-  productLogo: "logo.png"
+  productIcon: "squid.png"
+  productLogo: "squid.png"
   productWallpaper: "wallpaper.png"
-  productWelcome: "welcome.png"
+  productWelcome: "languages.png"
 
+style:
+  SidebarBackground: "#4c4f69"
+  SidebarText: "#eff1f5"
+  SidebarTextCurrent: "#4c4f69"
+  SidebarBackgroundCurrent: "#acb0be"
+
+slideshow: "show.qml"
 slideshowAPI: 2

@@ -35,7 +35,8 @@ This profile ships Calamares modules under [`airootfs/etc/calamares/`](airootfs/
 
 - Keep changes focused (one logical change per PR when possible).
 - Match existing shell/YAML style.
-- If you change `packages.d/*.list`, run `./build-iso.sh` or regenerate `packages.x86_64` the same way CI does (see [`build-iso.sh`](build-iso.sh)).
+- If you change `packages.d/*.list`, run `bash scripts/gen-packages.sh` (or `./build-iso.sh`, which regenerates [`packages.x86_64`](packages.x86_64) the same way CI does). Do not hand-edit `packages.x86_64` as the source of truth.
+- Optional local Calamares build: [`scripts/build-calamares-local.sh`](scripts/build-calamares-local.sh) then [`scripts/prepare-repo.sh`](scripts/prepare-repo.sh).
 - Document new third-party repos or keys in [`README.md`](README.md).
 
 ## Code of conduct

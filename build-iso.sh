@@ -79,11 +79,15 @@ case "${KITEST_THEME:-}" in
     cp -f "$PROFILE_DIR/themes/syslinux/${KITEST_THEME}/splash.png" \
       "$PROFILE_BUILD_DIR/syslinux/splash.png"
 
-    # Calamares branding theming (wallpaper + desc).
+    # Calamares branding theming (wallpaper + desc + optional stylesheet).
     cp -f "$PROFILE_DIR/themes/calamares/${KITEST_THEME}/branding.desc" \
       "$PROFILE_BUILD_DIR/airootfs/etc/calamares/branding/kitten/branding.desc"
     cp -f "$PROFILE_DIR/themes/calamares/${KITEST_THEME}/wallpaper.png" \
       "$PROFILE_BUILD_DIR/airootfs/etc/calamares/branding/kitten/wallpaper.png"
+    if [[ -r "$PROFILE_DIR/themes/calamares/${KITEST_THEME}/stylesheet.qss" ]]; then
+      cp -f "$PROFILE_DIR/themes/calamares/${KITEST_THEME}/stylesheet.qss" \
+        "$PROFILE_BUILD_DIR/airootfs/etc/calamares/branding/kitten/stylesheet.qss"
+    fi
     ;;
   *)
     echo "Unknown KITEST_THEME=${KITEST_THEME}. Use: none|latte|mocha" >&2

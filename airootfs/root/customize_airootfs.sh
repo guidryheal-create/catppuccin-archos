@@ -12,24 +12,48 @@ if [[ -d /usr/share/kitest/calamares-modules ]]; then
 fi
 
 # -------------------------
-# NETWORK: NetworkManager on live (Ethernet + Wi‑Fi in Plasma); systemd-resolved for DNS.
-# Do not run systemd-networkd alongside NM (they fight for interfaces). Files under
-# airootfs/etc/systemd/network/ apply only if networkd is enabled later (e.g. target chroot).
+# CALAMARES: ensure libyaml-cpp is resolvable (EOS binary may not depend on yaml-cpp explicitly).
+# Do not run pacman -Sy/-Syu here — partial DB sync can skew ABI vs pacstrapped packages (e.g. libyaml-cpp).
 # -------------------------
-systemctl disable systemd-networkd.service 2>/dev/null || true
-systemctl mask systemd-networkd.service 2>/dev/null || true
-systemctl disable systemd-networkd-wait-online.service 2>/dev/null || true
-systemctl mask systemd-networkd-wait-online.service 2>/dev/null || true
+if [[ -x /usr/bin/calamares ]]; then
+  if ! pacman -Q yaml-cpp &>/dev/null; then
+    echo "WARNING: yaml-cpp not installed; installing from frozen pacstrap DBs..." >&2
+    pacman -S --needed --noconfirm yaml-cpp || {
+      echo "ERROR: could not install yaml-cpp (needed for Calamares)." >&2
+      exit 1
+    }
+  fi
+  if ldd /usr/bin/calamares 2>/dev/null | grep -q 'libyaml-cpp\.so.*not found'; then
+    pacman -S --needed --noconfirm yaml-cpp || true
+    if ldd /usr/bin/calamares 2>/dev/null | grep -q 'libyaml-cpp\.so.*not found'; then
+      echo "ERROR: /usr/bin/calamares still missing libyaml-cpp after yaml-cpp install (ABI skew?)." >&2
+      ldd /usr/bin/calamares 2>/dev/null | grep yaml || true
+      exit 1
+    fi
+  fi
+fi
 
-systemctl unmask systemd-resolved.service 2>/dev/null || true
-systemctl enable systemd-resolved.service
-
-systemctl unmask NetworkManager.service 2>/dev/null || true
-systemctl enable NetworkManager.service
-systemctl enable NetworkManager-wait-online.service 2>/dev/null || true
-
-# Do not run pacman -Sy/-S here: syncing the DB without upgrading the pacstrapped root can cause
-# ABI skew (e.g. Calamares missing libyaml-cpp.so.*). Add deps in packages.d/; let mkarchiso stay consistent.
+# -------------------------
+# CALAMARES branding: fill missing assets from upstream default (same Calamares version as installed).
+# Profile ships branding.desc + stylesheet.qss + bundle.yaml; binaries come from the calamares package.
+# -------------------------
+_branding_dst=/etc/calamares/branding/kitten
+_branding_src=/usr/share/calamares/branding/default
+if [[ -d "$_branding_dst" && -d "$_branding_src" ]]; then
+  shopt -s nullglob
+  for f in "$_branding_src"/*.{png,jpg,jpeg,svg,gif,qml}; do
+    [[ -f "$f" ]] || continue
+    b=$(basename "$f")
+    [[ -e "$_branding_dst/$b" ]] || cp -a "$f" "$_branding_dst/"
+  done
+  shopt -u nullglob
+  if [[ -d "$_branding_src/lang" && ! -d "$_branding_dst/lang" ]]; then
+    cp -a "$_branding_src/lang" "$_branding_dst/"
+  fi
+  if [[ -f "$_branding_src/calamares-sidebar.qml" && ! -f "$_branding_dst/calamares-sidebar.qml" ]]; then
+    cp -a "$_branding_src/calamares-sidebar.qml" "$_branding_dst/"
+  fi
+fi
 
 # -------------------------
 # KERNEL: ensure archiso bootloader finds vmlinuz-linux
@@ -193,13 +217,27 @@ chmod 440 "/etc/sudoers.d/${LIVE_USER}"
 systemctl enable sddm
 systemctl enable qemu-guest-agent 2>/dev/null || true
 
-# NETWORK: avoid services that fight NetworkManager on the live image (common in QEMU).
+# NETWORK: NetworkManager + systemd-resolved on live; do not run systemd-networkd alongside NM.
 # - cloud-init (pulled by archiso base metapackage) can reapply network config at boot.
 # - ModemManager probes serial/modem devices and often causes virtio ethernet flap (connect/disconnect).
+systemctl disable systemd-networkd.service 2>/dev/null || true
+systemctl mask systemd-networkd.service 2>/dev/null || true
+systemctl disable systemd-networkd-wait-online.service 2>/dev/null || true
+systemctl mask systemd-networkd-wait-online.service 2>/dev/null || true
+
+systemctl unmask systemd-resolved.service 2>/dev/null || true
+systemctl enable systemd-resolved.service
+
+systemctl unmask NetworkManager.service 2>/dev/null || true
+systemctl enable NetworkManager.service
+systemctl enable NetworkManager-wait-online.service 2>/dev/null || true
+
 for s in cloud-init-local cloud-init cloud-config cloud-final; do
   systemctl mask "${s}.service" 2>/dev/null || true
 done
 systemctl mask ModemManager.service 2>/dev/null || true
+
+pacman -Sy
 
 # -------------------------
 # FLATPAK: remote only on live; app installs default to Calamares target (or KITEST_DESKTOP_EXTRAS=1)

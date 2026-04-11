@@ -1,0 +1,30 @@
+/* Kitest Calamares — sidebar contrast for Plasma / light themes (GPL-3.0-or-later, Calamares-derived). */
+
+#sidebarMenuApp {
+	padding: 3px;
+	background-color: #292F34;
+	color: #FFFFFF;
+}
+
+#sidebarApp {
+	background-color: #292F34;
+	color: #FFFFFF;
+}
+
+QListWidget::item {
+	color: #dce0e8;
+	padding: 4px;
+}
+
+QListWidget::item:selected {
+	background-color: #45475a;
+	color: #eff1f5;
+}
+
+#mainText {
+	font: bold 16px;
+}
+
+QWidget {
+	font: 16px;
+}

@@ -1,0 +1,20 @@
+/* Calamares — Catppuccin Mocha sidebar (Kitest theme). */
+#sidebarMenuApp {
+	padding: 3px;
+	background-color: #1e1e2e;
+	color: #cdd6f4;
+}
+#sidebarApp {
+	background-color: #1e1e2e;
+	color: #cdd6f4;
+}
+QListWidget::item {
+	color: #bac2de;
+	padding: 4px;
+}
+QListWidget::item:selected {
+	background-color: #585b70;
+	color: #1e1e2e;
+}
+#mainText { font: bold 16px; }
+QWidget { font: 16px; }

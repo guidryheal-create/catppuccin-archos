@@ -126,6 +126,7 @@ zsh
 plasma-meta
 plasma-x11-session
 networkmanager
+plasma-nm
 sddm
 sddm-kcm
 konsole
@@ -161,8 +162,8 @@ pipewire-pulse
 wireplumber
 endeavouros-mirrorlist
 endeavouros-keyring
-calamares
-kpmcore
 yaml-cpp
+kpmcore
+calamares
 linux-kitten-cachyos-hardened
 b43-fwcutter
