@@ -52,8 +52,9 @@ Quick setup (USB)
 Notes
 -----
 
-- **Calamares** is started from the live desktop (or autostart), not from
-  choosing "persistent" in the boot menu.
+- **Calamares** on **persistent live** autostarts after Plasma login (overlay on
+  **KITEST_PERSIST**). On the default **live session** entry, launch it from the
+  **Install Kitest OS** desktop icon or the application menu — it does not autostart.
 - Persistence needs a **writable** partition; DVD / read-only media cannot
   store the overlay.
 - **QEMU / Proxmox / libvirt:** same rule -- attach a **second** virtual disk,
