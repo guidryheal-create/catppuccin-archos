@@ -50,6 +50,9 @@ if [[ -x /usr/bin/calamares ]]; then
     fi
     _pacman_yaml=/tmp/kitest-pacman-yaml-cpp.conf
     # Minimal options: same paths as live root; disable signatures for this downgrade only.
+    # airootfs does not ship /etc/pacman.d/gnupg (live session uses etc-pacman.d-gnupg.mount tmpfs).
+    # Pacman rejects an explicit GPGDir that does not exist; SigLevel=Never still parses the option.
+    install -d -m0755 /etc/pacman.d/gnupg
     cat >"$_pacman_yaml" <<'EOF'
 [options]
 RootDir = /
@@ -286,12 +289,18 @@ for s in cloud-init-local cloud-init cloud-config cloud-final; do
 done
 systemctl mask ModemManager.service 2>/dev/null || true
 
-pacman -Sy
+# Do not run pacman -Sy here: pacstrap already left sync DBs; mkarchiso uses pacstrap -G (no host keyring
+# copy) so a chroot -Sy often fails on DB PGP checks before pacman-init runs on the live session. A sync
+# here would also contradict the frozen-DB policy above the Calamares/yaml-cpp block.
 
 # -------------------------
 # FLATPAK: remote only on live; app installs default to Calamares target (or KITEST_DESKTOP_EXTRAS=1)
 # -------------------------
-flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+if [[ "${KITEST_OFFLINE:-0}" != "1" ]]; then
+  flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+else
+  echo "NOTICE: KITEST_OFFLINE=1 — skipping flathub remote-add (run flatpak remote-add on the live session)." >&2
+fi
 chmod +x /usr/local/bin/kitest-desktop-extras.sh
 chmod +x /usr/local/bin/kitten-theme-selector 2>/dev/null || true
 chmod +x /usr/local/bin/kitten-apply-catppuccin-kvantum 2>/dev/null || true
