@@ -26,8 +26,7 @@ file_permissions=(
   ["/usr/local/bin/livecd-sound"]="0:0:755"
   ["/usr/local/bin/kitest-welcome"]="0:0:755"
   ["/usr/local/bin/kitest-desktop-extras.sh"]="0:0:755"
-  ["/usr/local/bin/kitest-calamares-flatpak.sh"]="0:0:755"
-  ["/usr/local/bin/kitest-calamares-cleanup.sh"]="0:0:755"
-  ["/usr/local/bin/kitest-calamares-safe"]="0:0:755"
+  ["/usr/local/bin/kitest-live-first-run.sh"]="0:0:755"
   ["/usr/local/bin/kitten-apply-catppuccin-kvantum"]="0:0:755"
+  ["/usr/local/bin/kitten-theme-selector"]="0:0:755"
 )

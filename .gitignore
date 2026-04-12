@@ -2,5 +2,5 @@
 *.iso
 *.img
 /var/tmp/kitest-work/
-# Vendored ALA package (run scripts/fetch-yaml-cpp08-vendor.sh); force-add with git add -f if you want it in git.
-airootfs/root/yaml-cpp-0.8.0-3-x86_64.pkg.tar.zst
+# Never commit a nested git repo under airootfs (e.g. accidental catppuccin/kvantum clone).
+airootfs/usr/share/kvantum/.git/

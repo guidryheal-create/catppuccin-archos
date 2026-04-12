@@ -2,7 +2,7 @@ Kitest OS - persistent live overlay (USB)
 ==========================================
 
 This uses mkinitcpio-archiso’s **cow_label** option (see upstream boot parameter
-docs). It is **not** the Calamares installer: you still get **SDDM -> Plasma**
+docs). It is **not** the installer: you still get **SDDM -> Plasma**
 like the default live entry; the only difference is where the overlay is stored.
 
 If you see **“failed to mount root device”** / **“can’t access TTY”**, that is an
@@ -14,7 +14,7 @@ Boot menu names (match systemd-boot / Syslinux; ASCII hyphens for BIOS compatibi
 -------------------------------------------------------------------------------------
 
   * Kitest OS - live session (..., BIOS / UEFI)
-    Default RAM overlay; install with **Calamares** after login from the desktop.
+    Default RAM overlay; install with **archinstall** after login from the desktop.
 
   * Kitest OS - live session (..., BIOS / UEFI) with speech
     Same, with speakup.
@@ -52,9 +52,10 @@ Quick setup (USB)
 Notes
 -----
 
-- **Calamares** on **persistent live** autostarts after Plasma login (overlay on
-  **KITEST_PERSIST**). On the default **live session** entry, launch it from the
-  **Install Kitest OS** desktop icon or the application menu — it does not autostart.
+- **First-run** (Flathub + Brave, best-effort) uses **xdg autostart** once per user.
+- Install the system with **archinstall** from the **Install Kitest OS** desktop icon
+  or run **`archinstall`** in a terminal. Optional package groups: **`/usr/share/kitest/archinstall-examples/`**
+  and **`/usr/share/kitest/netinstall-bundles.yaml`** (reference).
 - Persistence needs a **writable** partition; DVD / read-only media cannot
   store the overlay.
 - **QEMU / Proxmox / libvirt:** same rule -- attach a **second** virtual disk,

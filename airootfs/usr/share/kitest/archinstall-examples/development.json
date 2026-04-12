@@ -1,0 +1,17 @@
+{
+  "packages": [
+    "base-devel",
+    "git",
+    "gdb",
+    "perf",
+    "strace",
+    "sparse",
+    "bison",
+    "flex",
+    "pahole",
+    "bc",
+    "linux-headers",
+    "ark",
+    "kate"
+  ]
+}

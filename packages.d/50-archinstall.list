@@ -1,0 +1,2 @@
+# Guided TUI installer from official repos ([extra] `archinstall`).
+# Same package is already listed in packages.d/10-archiso-base.list (Arch releng parity).

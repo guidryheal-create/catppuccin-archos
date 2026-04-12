@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Kitest live first-run
+Comment=Flathub + Brave (best-effort); Catppuccin is applied at image build
+Exec=/usr/local/bin/kitest-live-first-run.sh
+X-KDE-autostart-phase=2

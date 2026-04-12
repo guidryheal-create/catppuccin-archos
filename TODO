@@ -253,8 +253,8 @@ This is what comes later:
 * [ ] custom branding (logo, name, `/etc/os-release`) — partial: `profiledef.sh` / ISO metadata only
 * [ ] custom KDE layout
 * [x] welcome app / first boot wizard — minimal: `kitest-welcome` + autostart (not Calamares-scale)
-* [x] installer (Calamares) — profile in `airootfs/etc/calamares/`; **`calamares`** binary from **[endeavouros]** (Chaotic-AUR sync DB has no `calamares` package; see `pacman.conf`, `build-iso.sh`, README)
-* [x] custom repo (optional) — `[endeavouros]` + `airootfs/etc/pacman.d/endeavouros-mirrorlist` for installer + live pacman
+* [x] installer — **`archinstall`** from official repos; optional package lists in `/usr/share/kitest/`
+* [x] custom repo (optional) — **`[kitten-local]`** for custom kernel only (see `pacman.conf`)
 
 👉 Keep Kitest OS = clean base
 👉 Build Choutoulu OS on top

@@ -1,0 +1,10 @@
+{
+  "packages": [
+    "tor",
+    "torsocks",
+    "lynis",
+    "apparmor",
+    "firewalld",
+    "clamav"
+  ]
+}

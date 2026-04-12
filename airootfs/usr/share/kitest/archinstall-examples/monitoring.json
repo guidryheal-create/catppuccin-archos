@@ -1,0 +1,3 @@
+{
+  "packages": ["btop", "iotop", "iftop", "glances", "nvtop"]
+}

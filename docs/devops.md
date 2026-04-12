@@ -16,7 +16,7 @@ So in practice:
 | Reproducible builds | Record `pacman -Q` from the chroot or use a fixed snapshot mirror / own repo. |
 | Faster CI | Persist `/var/cache/pacman/pkg` (Compose volume `kitest-pacman-cache` does this locally). |
 | Stricter QA | Gate merges on `build-iso` + a QEMU smoke boot; optional `arch-repro-status` if you package custom bits. |
-| Real fork / derivative | Custom `[custom]` repo in `pacman.conf`, own signing keys, maybe Calamares — out of scope for “profile only”. |
+| Real fork / derivative | Custom `[custom]` repo in `pacman.conf`, own signing keys, custom installer flow — out of scope for “profile only”. |
 
 ## Docker Compose services
 

@@ -1,4 +1,4 @@
-# Enough Mesa/Vulkan for typical AMD/Intel live sessions (NVIDIA → Calamares netinstall).
+# Enough Mesa/Vulkan for typical AMD/Intel live sessions (NVIDIA → optional bundle / archinstall).
 mesa
 xf86-video-amdgpu
 xf86-video-intel

@@ -1,0 +1,19 @@
+Kitest optional package groups (formerly Calamares netinstall bundles)
+
+Reference list: ../netinstall-bundles.yaml
+
+These JSON files contain only a "packages" array. Merge them into a full configuration
+from `archinstall` (use "Save configuration" in the TUI), or add the same package names
+under Additional packages in the guided installer.
+
+Example:
+
+  archinstall --config /usr/share/kitest/archinstall-examples/development.json
+
+You may need a complete user_configuration.json from a dry run; merge the "packages" key.
+
+Brave browser: install from Flathub on the live session or after install:
+
+  flatpak install flathub com.brave.Browser
+
+Catppuccin in Brave is usually a theme from the Chrome Web Store (manual step).

@@ -12,7 +12,12 @@ need_cmd() {
 
 need_cmd kdialog
 
-theme_root="/usr/share/kitten-themes/kvantum"
+theme_root=""
+if [[ -d "/usr/share/kvantum/themes" ]] && compgen -G "/usr/share/kvantum/themes/*" >/dev/null 2>&1; then
+  theme_root="/usr/share/kvantum/themes"
+elif [[ -d "/usr/share/kitten-themes/kvantum" ]]; then
+  theme_root="/usr/share/kitten-themes/kvantum"
+fi
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
 kvantum_conf="$config_dir/Kvantum/kvantum.kvconfig"
 kvantum_user_themes="$config_dir/Kvantum/themes"
@@ -21,8 +26,8 @@ qt6ct_conf="$config_dir/qt6ct/qt6ct.conf"
 plasma_env_dir="$config_dir/plasma-workspace/env"
 plasma_env_file="$plasma_env_dir/kitten-qt-platformtheme.sh"
 
-if [[ ! -d "$theme_root" ]]; then
-  kdialog --title "$app_title" --error "No bundled Catppuccin Kvantum themes found at:\n$theme_root\n\nRebuild the ISO with KITEST_BUNDLE_CATPPUCCIN_KVANTUM=1 (default), or use the Theme Selector to install manually." 2>/dev/null || true
+if [[ -z "$theme_root" || ! -d "$theme_root" ]]; then
+  kdialog --title "$app_title" --error "No bundled Catppuccin Kvantum themes found under:\n/usr/share/kvantum/themes\n(or legacy /usr/share/kitten-themes/kvantum)\n\nRebuild the ISO with KITEST_BUNDLE_CATPPUCCIN_KVANTUM=1 (default), or use the Theme Selector to install manually." 2>/dev/null || true
   exit 1
 fi
 

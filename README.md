@@ -1,53 +1,22 @@
 # Kitest OS (archiso profile)
 
-Arch Linux live ISO profile: Plasma desktop (**Breeze** Qt style by default), optional Calamares installer, and curated optional bundles (see `airootfs/etc/calamares/`). **Kvantum** is optional; install/configure manually after login if you want it.
+Arch Linux live ISO profile: Plasma desktop, **[archinstall](https://github.com/archlinux/archinstall)** (official `[extra]` package) as the guided installer, **Catppuccin Kvantum** + **qt6ct** defaults on the live session, and optional package-group references under **`/usr/share/kitest/`** (see `netinstall-bundles.yaml` and `archinstall-examples/`). Use **Kitten Theme Selector** to switch back to Breeze if a VM misbehaves.
 
 - **License:** [MIT](LICENSE) for this profile’s files; toolchain and upstream packages have their own licenses (see LICENSE).
 - **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)
 
-## Why `pacman` said: `error: target not found: calamares`
-
-Official Arch repositories **`[core]`** and **`[extra]`** do **not** ship the **Calamares** package. Upstream publishes it on the [AUR](https://aur.archlinux.org/packages/calamares); you need a **third-party binary repo** (or a local `makepkg` build) to install it with `pacstrap`.
-
-A plain `pacstrap` using only Rackspace/Leaseweb/geo mirrors **cannot** install `calamares` until a repo that provides it is enabled and trusted. Typical failures:
-
-```text
-:: Synchronizing package databases...
- core   … 100%
- extra  … 100%
-error: target not found: calamares
-==> ERROR: Failed to install packages to new root
-```
-
-If you already added **`[chaotic-aur]`** and see **`chaotic-aur … 100%`** but **still** get `target not found: calamares`, the repo database is syncing but **there is no `calamares` package in that sync DB** (Chaotic does not publish it—see [Chaotic-AUR](https://aur.chaotic.cx/) vs [AUR `calamares`](https://aur.archlinux.org/packages/calamares)). This profile uses the **[EndeavourOS](https://endeavouros.com/)** repository instead, which **does** ship `calamares` (same idea as [their ISO package list](https://github.com/endeavouros-team/EndeavourOS-ISO/blob/main/packages.x86_64)).
-
-**Sources:** [AUR `calamares`](https://aur.archlinux.org/packages/calamares), [Arch Wiki — Calamares](https://wiki.archlinux.org/title/Calamares), EndeavourOS [mirrorlist upstream](https://github.com/endeavouros-team/PKGBUILDS/tree/master/endeavouros-mirrorlist).
-
 ### Mental model
 
 - **`mkarchiso` → `pacstrap`** uses **this profile’s `pacman.conf`**, not the host’s `/etc/pacman.conf`.
-- You still need **EndeavourOS signing keys on the build host** so `pacman` can **verify** `endeavouros-keyring` / `endeavouros-mirrorlist` / `calamares` while installing into the airootfs. Those `.pkg.tar.zst` files are signed with keys that are **not** in the Arch Linux keyring until the EndeavourOS keyring is loaded. **`scripts/bootstrap-endeavouros-pacman.sh`** (called from **`build-iso.sh`** and CI) copies [`endeavouros.gpg` + trusted/revoked lists](https://github.com/endeavouros-team/keyring) into `/usr/share/pacman/keyrings/`, runs **`pacman-key --populate endeavouros`**, then **`pacman -U`** the two keyring packages from a mirror. If you see **`invalid or corrupted package (PGP signature)`** or an interactive **`Import PGP key … ?`**, clear stale downloads (`rm /var/cache/pacman/pkg/endeavouros-*.pkg.tar.zst*`) and re-run; do not run `pacman -U` on those packages before populating the EOS keyring. If **`endeavouros-keyring: … exists in filesystem`**, the bootstrap script uses **`pacman -U --overwrite`** on the three `endeavouros*` keyring paths so the official package can replace the pre-seeded copies.
-
-### What this profile does
-
-1. **`pacman.conf`** appends **`[endeavouros]`** with **`SigLevel = PackageRequired`** and **`Include = /etc/pacman.d/endeavouros-mirrorlist`** (after `[extra]`).
-2. **`airootfs/etc/pacman.d/endeavouros-mirrorlist`** ships mirror `Server =` lines inside the live image.
-3. **`packages.d/50-calamares.list`** lists **`endeavouros-mirrorlist`**, **`endeavouros-keyring`**, **`yaml-cpp`** (before **`calamares`**), **`kpmcore`**, **`calamares`**. The usual **first** failure mode is **`error: target not found: calamares`** (repo / sync / keys / network), not **`yaml-cpp`**: **`yaml-cpp`** matters when the **`calamares`** binary is already installed but **`ldd`** shows a missing **`libyaml-cpp.so`**. **`customize_airootfs.sh`** verifies **`ldd`** and installs **`yaml-cpp`** from frozen DBs if needed (no **`pacman -Sy`** there). **Persistent live** overlays can strand an old root without **`yaml-cpp`** while **`calamares`** updates: recreate the persist image or **`pacman -S yaml-cpp`** in the live session.
-4. **`build-iso.sh`** runs **`scripts/bootstrap-endeavouros-pacman.sh`**: populate EOS keys from GitHub, then **`pacman -U`** the latest **`endeavouros-keyring`** / **`endeavouros-mirrorlist`** from **`EOS_PKG_BASE`** (default: Gigenet US mirror) before `mkarchiso`.
-
-Installer **configuration** is **not** a separate `calamares-config` package here: this repo **is** the config under [`airootfs/etc/calamares/`](airootfs/etc/calamares/). Module files that **also ship inside the `calamares` package** (e.g. `bootloader.conf`, `users.conf`) are staged under [`airootfs/usr/share/kitest/calamares-modules/`](airootfs/usr/share/kitest/calamares-modules/) and copied into `/etc/calamares/modules/` in [`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) so `pacstrap` does not hit **“exists in filesystem”**. If you see hints about a generic “partition” module with no config, ensure these files are present in the built image.
+- Only **official Arch** repositories **`[core]`**, **`[extra]`**, and optional **`[kitten-local]`** (custom kernel) are used — no third-party installer repo.
 
 ### Package lists (`packages.d` vs `packages.x86_64`)
 
-**Edit the fragments** under [`packages.d/`](packages.d/) (for example [`packages.d/50-calamares.list`](packages.d/50-calamares.list)). Running **`build-iso.sh`** invokes [`scripts/gen-packages.sh`](scripts/gen-packages.sh), which **regenerates** [`packages.x86_64`](packages.x86_64). Do not treat `packages.x86_64` as the source of truth unless you are only inspecting the merged output.
-
-### Optional: local Calamares in `[kitten-local]`
-
-To build Calamares from the [AUR](https://aur.archlinux.org/packages/calamares) into **`[kitten-local]`** (and optionally stop using the EndeavourOS binary), see [`scripts/build-calamares-local.sh`](scripts/build-calamares-local.sh). After a successful build, run **`scripts/prepare-repo.sh`**, remove **`calamares`** from the EndeavourOS flow in **`packages.d/50-calamares.list`**, and add **`calamares`** next to your other **`[kitten-local]`** packages (see [`pacman.conf`](pacman.conf)).
+**Edit the fragments** under [`packages.d/`](packages.d/). Running **`build-iso.sh`** invokes [`scripts/gen-packages.sh`](scripts/gen-packages.sh), which **regenerates** [`packages.x86_64`](packages.x86_64). Do not treat `packages.x86_64` as the source of truth unless you are only inspecting the merged output. The **`archinstall`** package is listed in **`packages.d/10-archiso-base.list`** (upstream releng parity); **`packages.d/50-archinstall.list`** is reserved for installer-related notes.
 
 ## Build on Arch (native)
 
-Needs **root**. **Network is only required when a step can’t be satisfied from cache** (EndeavourOS keyring bootstrap, pacstrap downloads, kernel deps/sources).
+Needs **root**. **Network is only required when a step can’t be satisfied from cache** (pacstrap downloads, optional Catppuccin git fetch, kernel deps/sources).
 
 ```bash
 sudo ./build-iso.sh
@@ -120,7 +89,7 @@ KITEST_OFFLINE=1 sudo ./build-iso.sh
 
 Notes:
 
-- EndeavourOS trust bootstrap is **skipped automatically** if `endeavouros-keyring` and `endeavouros-mirrorlist` are already installed on the build host.\n+- Kernel build deps installation is skipped when `KITEST_OFFLINE=1` (so ensure deps are preinstalled if you want a true offline kernel rebuild attempt).
+- Kernel build deps installation is skipped when `KITEST_OFFLINE=1` (so ensure deps are preinstalled if you want a true offline kernel rebuild attempt).
 
 ## Kernel: Kitten CachyOS-style (hardened + BORE)
 
@@ -152,7 +121,7 @@ To keep bootloader entries unchanged, [`customize_airootfs.sh`](airootfs/root/cu
 
 `mount: .../proc: permission denied` / `failed to setup chroot`.
 
-Run the container **`--privileged`** (simplest and what upstream archiso docs expect for containers). The build needs **network** inside the container (EndeavourOS key bootstrap and `pacstrap`).
+Run the container **`--privileged`** (simplest and what upstream archiso docs expect for containers). The build needs **network** inside the container for `pacstrap` unless everything is cached.
 
 ```bash
 docker run --rm -it --privileged \
@@ -185,13 +154,15 @@ ISOs land in **`./out/`**. Package downloads are cached in the **`kitest-pacman-
 
 Rolling base, CI, and “do we fork Arch?” are summarized in [docs/devops.md](docs/devops.md).
 
-## Running the ISO (USB, VMs, persistence, Calamares)
+## Running the ISO (USB, VMs, persistence, archinstall)
 
-### Calamares is not the firmware boot menu
+### Installer is not the firmware boot menu
 
-Boot order is always: **firmware (Syslinux / systemd-boot) → Linux → SDDM → Plasma session → Calamares**.
+Boot order is always: **firmware (Syslinux / systemd-boot) → Linux → SDDM → Plasma session**.
 
-There is **no** Calamares screen before the desktop. The graphical installer is [`calamares`](https://wiki.archlinux.org/title/Calamares) and is started **after login** (see [`airootfs/etc/xdg/autostart/calamares.desktop`](airootfs/etc/xdg/autostart/calamares.desktop)). If you only see a black screen, wait for **SDDM** (or on slow emulation, several minutes), then log in as **`kitest`** (password is **empty** / unset). If you changed the live user at build time, use `KITEST_LIVE_USER`’s value instead.
+The installer is **[archinstall](https://wiki.archlinux.org/title/Archinstall)** (TUI). Launch it from the **Install Kitest OS** desktop icon or application menu (**`konsole -e archinstall`**). A **first-run** autostart script (**`kitest-live-first-run`**) adds Flathub and tries **Brave** once per user (best-effort). If you only see a black screen, wait for **SDDM**, then log in as **`kitest`** (password **empty** / unset). If you changed the live user at build time, use `KITEST_LIVE_USER`’s value instead.
+
+Optional package groups from the old Calamares netinstall are documented in **`/usr/share/kitest/netinstall-bundles.yaml`** and example JSON fragments in **`/usr/share/kitest/archinstall-examples/`** — merge **`packages`** into your saved **`archinstall`** configuration or pick the same names under **Additional packages** in the TUI.
 
 ### Finding the persistence partition (`KITEST_PERSIST`)
 
@@ -277,26 +248,19 @@ Without that disk, use the default **live session** entry. If you see **overlayf
 - **Persistent live:** add a **second** VirtIO Block (or SCSI) disk, then from a **Linux** host (or another VM) run **`mkfs.ext4 -L KITEST_PERSIST` on that disk** (`qemu-img` / `dd` a raw file, or use Proxmox’s disk UI and then format from a live ISO). Until that label exists, **do not** boot the **persistent** entry — use **live session**.
 - **VirtIO** (`virtio-scsi` / `virtio-blk`) is fine; the kernel and initramfs include the usual drivers.
 
-### Calamares does not appear or no installer window
+### archinstall / Konsole
 
-1. **Log in at SDDM** as **`kitest`** (empty password). Calamares is configured to **autostart after Plasma** ([`calamares.desktop`](airootfs/etc/xdg/autostart/calamares.desktop)). It is **not** the boot splash. If you changed the live user at build time, use `KITEST_LIVE_USER`’s value instead.
-2. Wait ~30 seconds after the desktop loads; if nothing opens, open the **application menu** and search for **Install** / **Calamares**, or run in **Konsole**:
+1. Open **Konsole** and run **`archinstall`**, or use the **Install Kitest OS** launcher.
+2. If **`pacman-key`** / mirror errors appear inside **archinstall**, see [archinstall known issues](https://archinstall.readthedocs.io/en/latest/help/known_issues.html) (e.g. refresh **`archlinux-keyring`**).
 
-   ```bash
-   /usr/bin/calamares
-   ```
+The live image sets SDDM **`DisplayServer=x11`** in [`airootfs/etc/sddm.conf.d/10-x11-greeter.conf`](airootfs/etc/sddm.conf.d/10-x11-greeter.conf) so the greeter stays on X11.
 
-3. If the window fails to start, run **`calamares`** from a terminal and read the error (missing module, config, or Qt display). Treat **`pacman`** errors separately from **dynamic linker** errors:
-   - **`error: target not found: calamares`** (e.g. **`pacman -S calamares`** or **`pacman -Ss calamares`** showing nothing): Calamares is **not** in **`[core]`** / **`[extra]`**. Pacman only sees it if **`[endeavouros]`** is enabled in **`/etc/pacman.conf`**, **`/etc/pacman.d/endeavouros-mirrorlist`** exists, and the sync DB is present (**`ls /var/lib/pacman/sync/endeavouros.db*`**). On the live system use **`sudo pacman -Sy`** (needs working **HTTPS** to an EOS mirror — in QEMU user networking, **`ping`** may fail while **`pacman`** still works; see **`network_issues.md`**). If DB sync fails with **PGP** errors, run **`sudo pacman-key --populate`** (imports keyrings under **`/usr/share/pacman/keyrings/`**, including EndeavourOS) and retry. **`pacman -Q calamares`** should succeed on a profile-built ISO that finished **`pacstrap`** successfully.
-   - **`error while loading shared libraries: libyaml-cpp.so.*`** when **running** **`/usr/bin/calamares`**: the **`calamares`** package is present but a runtime dependency is missing; install **`yaml-cpp`** (listed in **`packages.d/50-calamares.list`**) and rebuild. Confirm with **`pacman -Q yaml-cpp`** and **`ldd /usr/bin/calamares | grep yaml`**.
-4. **Welcome** module checks **RAM** (≥ 1 GiB in [`welcome.conf`](airootfs/etc/calamares/modules/welcome.conf)) and **storage** (≥ 4 GiB). Very small test disks may block the wizard until you attach a larger virtual disk.
-5. This image uses **Calamares from the EndeavourOS repository**; behaviour can differ slightly from upstream Calamares. Your job sequence is in [`settings.conf`](airootfs/etc/calamares/settings.conf).
+**QEMU smoke tests:** default [`qemu-smoke.sh`](qemu-smoke.sh) uses **`QEMU_GPU=virtio-gl`**. If the guest desktop is unstable, try **`QEMU_GPU=qxl`**.
 
-### Debug: black screen / blank windows (Plasma or Calamares)
+### Debug: black screen / blank windows (Plasma)
 
-This project avoids global Qt theme overrides by default, but if you still hit a black/blank UI, grab logs first (it’s usually GPU/compositor or Qt style inheritance).
+If you hit a black/blank UI, grab logs first (GPU/compositor or Qt style). Use **Kitten Theme Selector** to return to Breeze.
 
-- **Calamares log** (when launched via the safe wrapper): `/tmp/calamares.log`
 - **System logs**:
 
 ```bash
@@ -311,19 +275,17 @@ Project notes for archiso + this profile: [`.skill/SKILL.md`](.skill/SKILL.md). 
 ## CI
 
 - Lint: `.github/workflows/lint.yml`
-- ISO build: `.github/workflows/build-archiso.yml` (Arch container with **privileged** so `pacstrap` works; EndeavourOS keyring step matches `build-iso.sh`)
+- ISO build: `.github/workflows/build-archiso.yml` (Arch container with **privileged** so `pacstrap` works)
 
 ## Mirrors and big downloads
 
 `pacman.conf` uses **Rackspace and Leaseweb first**, **`geo.mirror.pkgbuild.com` last**, plus **`ParallelDownloads = 3`**, so huge `pacstrap` runs are less likely to hit SSL resets on the CDN mid-transaction.
 
-Optional **Flatpak** apps are installed on the **target system** via Calamares (`packagechooser` + `shellprocess`) or manually; see [`kitest-desktop-extras.sh`](airootfs/usr/local/bin/kitest-desktop-extras.sh) for a live-session retry script.
+Optional **Flatpak** apps: first-run tries **Brave**; full extras (Steam, Flatseal, …) via [`kitest-desktop-extras.sh`](airootfs/usr/local/bin/kitest-desktop-extras.sh) or set **`KITEST_DESKTOP_EXTRAS=1`** at image build time.
 
-## Themes (Breeze default; Kvantum optional)
+## Themes (Catppuccin Kvantum default; Breeze via selector)
 
-[`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) sets **`QT_QPA_PLATFORMTHEME=kde`** in **`/etc/environment.d/99-qt.conf`** only (no **`QT_STYLE_OVERRIDE`**). Plasma uses **Breeze** application style — stable in QEMU and on minimal GPUs.
-
-**Kvantum** (`kvantum`, `kvantum-theme-materia` in [`packages.d/30-theme-fonts.list`](packages.d/30-theme-fonts.list)) is **not** forced on by default (forced Kvantum + Catppuccin caused black or partially broken desktops in some VMs).
+[`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) installs Catppuccin assets into **`/usr/share/kvantum/themes/`** (system-wide; **`/usr/share/kitten-themes/kvantum`** is a symlink to the same tree). It writes **`~/.config/Kvantum/kvantum.kvconfig`** with a **`theme=`** name that resolves to those directories (no per-user copy of SVG/theme files). The same defaults are applied to **`/etc/skel`** before the live user is created, so **archinstall-created accounts** inherit qt6ct + Kvantum. **`QT_QPA_PLATFORMTHEME=qt6ct`** is set in **`/etc/environment.d/99-qt.conf`**. Use **Kitten Theme Selector** to switch to **Breeze** if a VM shows a black or partial desktop.
 
 ### Kitten Theme Selector (user-only; safe defaults)
 
@@ -378,7 +340,7 @@ flowchart TD
 
 ### Bundling Catppuccin Kvantum themes into the ISO
 
-The ISO does **not** need Catppuccin assets to boot reliably (Breeze default), but bundling themes makes the live session theme selector work **offline**.
+Bundling themes (default **on**) populates **`/usr/share/kvantum/themes/`** so the live session and **Kitten Theme Selector** work **offline**. With **`KITEST_BUNDLE_CATPPUCCIN_KVANTUM=0`**, only Breeze/Materia-style packages apply unless you install themes manually.
 
 If you want to **disable** bundling (smaller build / no extra assets), build with:
 
@@ -386,7 +348,7 @@ If you want to **disable** bundling (smaller build / no extra assets), build wit
 KITEST_BUNDLE_CATPPUCCIN_KVANTUM=0 sudo ./build-iso.sh
 ```
 
-Bundled themes are installed into **`/usr/share/kitten-themes/kvantum/`** for user-only application via the theme tools.
+Bundled themes are installed into **`/usr/share/kvantum/themes/`** (with **`/usr/share/kitten-themes/kvantum`** as a symlink) for the theme tools and live user seeding.
 
 #### Reproducible/offline bundling (vendored asset)
 
@@ -417,14 +379,6 @@ During `mkarchiso` you may see many lines like **`ast`**, **`wd719x`**, **`qla2x
 
 **`ast`** (ASPEED BMC VGA): this profile ships [`airootfs/etc/modprobe.d/blacklist-drm-ast.conf`](airootfs/etc/modprobe.d/blacklist-drm-ast.conf) so the module is not loaded on normal desktops. Remove the blacklist if you need that GPU.
 
-## Alternatives (not used here)
+## After install (EFI / boot)
 
-- **Build Calamares from AUR** inside the ISO build: slow, fragile, heavy deps.
-- **Copy binaries into `airootfs` by hand:** easy to drift from pacman and break updates.
-- **Chaotic-AUR** for `calamares`: the sync database there does **not** include a `calamares` package (so `pacstrap` still fails after `chaotic-aur` syncs).
-
-Using **`[endeavouros]`** with **`endeavouros-keyring`** keeps `pacstrap` declarative and reproducible when keys are bootstrapped as documented.
-
-## EFI + GRUB (first-boot)
-
-Calamares modules under `airootfs/etc/calamares/modules/` (`partition`, `bootloader`, etc.) drive the installed system. After a successful install, typical failures are **missing EFI boot entry** or **wrong disk layout**—verify `settings.conf` job order matches your Calamares version (EndeavourOS ships a patched `calamares`; see their [calamares fork](https://github.com/endeavouros-team/calamares) if upstream behaviour differs). For full ISO reproducibility, rely on **CI** (`.github/workflows/build-archiso.yml`) with the same `bootstrap` + `mkarchiso` steps as `build-iso.sh`.
+Disk layout and bootloader are chosen inside **archinstall**. If the system does not boot, verify EFI mountpoints and bootloader settings from the install log under **`/var/log/archinstall/`** on the live session or target system.

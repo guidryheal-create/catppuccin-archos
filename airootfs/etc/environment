@@ -1,1 +1,1 @@
-# No global HTTP/HTTPS proxy. Optional Tor can be added later (e.g. Calamares bundle) per user.
+# No global HTTP/HTTPS proxy. Optional Tor can be added per user (see /usr/share/kitest/netinstall-bundles.yaml).

@@ -24,7 +24,7 @@ This repo supports a layered workflow (kernel → local repo → ISO) so you don
   - `sudo ./scripts/prepare-repo.sh`
 - **Build ISO (often):**
   - `sudo ./build-iso.sh`
-  - or ISO-only: `sudo ./scripts/build-iso-only.sh` (EOS key bootstrap if needed, `prepare-repo.sh`, `gen-packages.sh` + `mkarchiso`; no kernel rebuild; honors `KITEST_THEME`)
+  - or ISO-only: `sudo ./scripts/build-iso-only.sh` (`prepare-repo.sh`, `gen-packages.sh` + `mkarchiso`; no kernel rebuild; honors `KITEST_THEME`)
 
 ### WORK_DIR reuse (mkarchiso cache)
 
@@ -44,7 +44,6 @@ To force no network (fail fast if something would require downloading):
 
 Notes:
 
-- EndeavourOS key bootstrap is skipped automatically if `endeavouros-keyring` and `endeavouros-mirrorlist` are already installed on the host.
 - Kernel dependency install is skipped when `KITEST_OFFLINE=1` (deps must already be installed if you want to rebuild offline).
 
 ## Pacman / mirrors (common failures)
@@ -61,7 +60,7 @@ Notes:
 
 ## Conventions here
 
-- **No global Tor/SOCKS proxy** in `/etc/environment`; optional Tor can be offered later (e.g. Calamares bundle) per user.
+- **No global Tor/SOCKS proxy** in `/etc/environment`; optional Tor can be installed from repos or bundle lists under `/usr/share/kitest/` per user.
 - **Live networking:** **NetworkManager** + **systemd-resolved** (see `customize_airootfs.sh`); **systemd-networkd** is masked on the live image. `airootfs/etc/systemd/network/*.network` is for targets that enable networkd later; `airootfs/etc/NetworkManager/NetworkManager.conf` applies on live and after install.
 - Do **not** edit the user’s plan file in `.cursor/plans/` unless they ask.
 

@@ -1,3 +1,3 @@
 # Contributing
 
-See **[CONTRIBUTING.md](CONTRIBUTING.md)** for build steps, EndeavourOS keyring bootstrap, and PR notes.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for build steps and PR notes.

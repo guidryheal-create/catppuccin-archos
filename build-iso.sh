@@ -8,28 +8,10 @@ WORK_DIR="${WORK_DIR:-/var/tmp/kitest-work}"
 OUT_DIR="${OUT_DIR:-/var/tmp/kitest-out}"
 LOCALREPO_DIR="${LOCALREPO_DIR:-/var/tmp/kitest-localrepo}"
 
-setup_endeavouros_trust() {
-  if [[ "${KITEST_SKIP_EOS_SETUP:-0}" == "1" || "${KITEST_SKIP_CHAOTIC_SETUP:-0}" == "1" ]]; then
-    echo "KITEST_SKIP_EOS_SETUP=1 (or legacy KITEST_SKIP_CHAOTIC_SETUP=1): skipping EndeavourOS keyring bootstrap (build will fail if calamares is listed)." >&2
-    return 0
-  fi
-  if pacman -Q endeavouros-keyring >/dev/null 2>&1 && pacman -Q endeavouros-mirrorlist >/dev/null 2>&1; then
-    return 0
-  fi
-  if [[ "${KITEST_OFFLINE:-0}" == "1" ]]; then
-    echo "KITEST_OFFLINE=1: endeavouros-keyring/mirrorlist not installed; cannot bootstrap without network. Install them once (online) or unset KITEST_OFFLINE." >&2
-    return 1
-  fi
-  # See scripts/bootstrap-endeavouros-pacman.sh — must populate EOS keys before pacman -U.
-  bash "$PROFILE_DIR/scripts/bootstrap-endeavouros-pacman.sh"
-}
-
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "Re-exec with sudo (mkarchiso must run as root)." >&2
   exec sudo env \
     WORK_DIR="$WORK_DIR" OUT_DIR="$OUT_DIR" LOCALREPO_DIR="${LOCALREPO_DIR:-}" \
-    EOS_PKG_BASE="${EOS_PKG_BASE:-}" EOS_KEYRING_GIT="${EOS_KEYRING_GIT:-}" \
-    KITEST_SKIP_EOS_SETUP="${KITEST_SKIP_EOS_SETUP:-}" KITEST_SKIP_CHAOTIC_SETUP="${KITEST_SKIP_CHAOTIC_SETUP:-}" \
     KITEST_SKIP_KERNEL_BUILD="${KITEST_SKIP_KERNEL_BUILD:-}" \
     KITEST_FORCE_KERNEL_REBUILD="${KITEST_FORCE_KERNEL_REBUILD:-}" \
     KITEST_KERNEL_BUILD_DIR="${KITEST_KERNEL_BUILD_DIR:-}" \
@@ -39,8 +21,6 @@ if [[ "$(id -u)" -ne 0 ]]; then
     KITEST_KERNEL="${KITEST_KERNEL:-}" KITEST_BRCM_DRIVER="${KITEST_BRCM_DRIVER:-}" \
     bash "$0" "$@"
 fi
-
-setup_endeavouros_trust
 
 case "${KITEST_CLEAN:-}" in
   ""|none) ;;
@@ -81,14 +61,18 @@ case "${KITEST_THEME:-}" in
     cp -f "$PROFILE_DIR/themes/syslinux/${KITEST_THEME}/splash.png" \
       "$PROFILE_BUILD_DIR/syslinux/splash.png"
 
-    # Calamares branding theming (wallpaper + desc + optional stylesheet).
+    # Optional theme metadata + wallpaper for live (legacy paths under themes/calamares/).
+    install -d -m0755 "$PROFILE_BUILD_DIR/airootfs/usr/share/kitest"
     cp -f "$PROFILE_DIR/themes/calamares/${KITEST_THEME}/branding.desc" \
-      "$PROFILE_BUILD_DIR/airootfs/etc/calamares/branding/kitten/branding.desc"
-    cp -f "$PROFILE_DIR/themes/calamares/${KITEST_THEME}/wallpaper.png" \
-      "$PROFILE_BUILD_DIR/airootfs/etc/calamares/branding/kitten/wallpaper.png"
+      "$PROFILE_BUILD_DIR/airootfs/usr/share/kitest/theme-${KITEST_THEME}.branding.desc"
+    if [[ -r "$PROFILE_DIR/themes/calamares/${KITEST_THEME}/wallpaper.png" ]]; then
+      install -d -m0755 "$PROFILE_BUILD_DIR/airootfs/usr/share/wallpapers/Kitest"
+      cp -f "$PROFILE_DIR/themes/calamares/${KITEST_THEME}/wallpaper.png" \
+        "$PROFILE_BUILD_DIR/airootfs/usr/share/wallpapers/Kitest/wallpaper-${KITEST_THEME}.png"
+    fi
     if [[ -r "$PROFILE_DIR/themes/calamares/${KITEST_THEME}/stylesheet.qss" ]]; then
       cp -f "$PROFILE_DIR/themes/calamares/${KITEST_THEME}/stylesheet.qss" \
-        "$PROFILE_BUILD_DIR/airootfs/etc/calamares/branding/kitten/stylesheet.qss"
+        "$PROFILE_BUILD_DIR/airootfs/usr/share/kitest/theme-${KITEST_THEME}.stylesheet.qss"
     fi
     ;;
   *)
