@@ -5,8 +5,93 @@ log() {
   printf '[kitest-install] %s\n' "$*"
 }
 
+archiso_search_uuid() {
+  local _o
+  _o="$(tr ' ' '\n' </proc/cmdline 2>/dev/null | sed -n 's/^archisosearchuuid=//p' | head -n 1)"
+  printf '%s' "${_o:-}"
+}
+
+live_medium_path() {
+  findmnt -nrno SOURCE /run/archiso/bootmnt 2>/dev/null \
+    || findmnt -nrno SOURCE /run/archiso/img_dev 2>/dev/null \
+    || true
+}
+
+cow_overlay_source() {
+  findmnt -nrno SOURCE /run/archiso/cowspace 2>/dev/null || true
+}
+
+root_part_from_archinstall_logs() {
+  command -v python3 >/dev/null 2>&1 || return 1
+  local f out
+  for f in /var/log/archinstall/user_disk_layouts.json /var/log/archinstall/user_configuration.json; do
+    [[ -r "$f" ]] || continue
+    out="$(
+      python3 - "$f" <<'PY' 2>/dev/null || true
+import json, sys
+path = sys.argv[1]
+
+def walk(o):
+    if isinstance(o, dict):
+        if o.get("mountpoint") == "/":
+            for k in ("path", "dev_path", "device"):
+                v = o.get(k)
+                if isinstance(v, str) and (v.startswith("/dev/") or v.startswith("/dev/mapper/")):
+                    print(v)
+                    return True
+        for v in o.values():
+            if walk(v):
+                return True
+    elif isinstance(o, list):
+        for i in o:
+            if walk(i):
+                return True
+    return False
+
+try:
+    with open(path, encoding="utf-8") as fp:
+        data = json.load(fp)
+    walk(data)
+except (OSError, json.JSONDecodeError, ValueError):
+    pass
+PY
+    )"
+    [[ -n "${out}" ]] || continue
+    printf '%s' "${out//$'\n'/}"
+    return 0
+  done
+  return 1
+}
+
+best_install_root_candidate() {
+  local archiso_uuid live_bdev cow_dev dev uuid fst best best_sz sz b
+  archiso_uuid="$(archiso_search_uuid)"
+  live_bdev="$(live_medium_path)"
+  cow_dev="$(cow_overlay_source)"
+  best=""
+  best_sz=0
+  while read -r dev uuid fst; do
+    [[ -b "${dev}" ]] || continue
+    case "${fst}" in
+      ext2 | ext3 | ext4 | btrfs | xfs | f2fs) ;;
+      *) continue ;;
+    esac
+    [[ -n "${archiso_uuid}" && "${uuid}" == "${archiso_uuid}" ]] && continue
+    [[ -n "${live_bdev}" && "${dev}" == "${live_bdev}" ]] && continue
+    [[ -n "${cow_dev}" && "${dev}" == "${cow_dev}" ]] && continue
+    b="${dev##*/}"
+    [[ -r "/sys/class/block/${b}/size" ]] || continue
+    sz="$(cat "/sys/class/block/${b}/size" 2>/dev/null || echo 0)"
+    [[ "${sz}" -gt "${best_sz}" ]] || continue
+    best_sz="${sz}"
+    best="${dev}"
+  done < <(lsblk -rpno NAME,UUID,FSTYPE -e 7,11 2>/dev/null || true)
+  printf '%s' "${best}"
+}
+
 ensure_target_mounted() {
   local root_part=""
+  local out
 
   if findmnt -rn /mnt >/dev/null 2>&1; then
     return 0
@@ -14,15 +99,22 @@ ensure_target_mounted() {
 
   log "/mnt is not mounted after archinstall; attempting recovery..."
 
-  # Prefer the currently mounted system root source when available.
-  root_part="$(lsblk -lpno NAME,MOUNTPOINT 2>/dev/null | awk '$2=="/"{print $1; exit}')"
+  if findmnt -rn /mnt/archinstall >/dev/null 2>&1; then
+    mkdir -p /mnt
+    mount --bind /mnt/archinstall /mnt && findmnt -rn /mnt >/dev/null 2>&1 && return 0
+  fi
+
+  root_part=""
+  if out="$(root_part_from_archinstall_logs)"; then
+    root_part="${out}"
+  fi
+
+  if [[ -z "${root_part}" || ! -b "${root_part}" ]]; then
+    root_part=""
+  fi
+
   if [[ -z "${root_part}" ]]; then
-    # Fallback: first whole disk + partition 1 (best-effort fallback).
-    local first_disk
-    first_disk="$(lsblk -dpno NAME 2>/dev/null | awk 'NR==1 {print; exit}')"
-    if [[ -n "${first_disk}" ]]; then
-      root_part="${first_disk}1"
-    fi
+    root_part="$(best_install_root_candidate)"
   fi
 
   if [[ -z "${root_part}" ]]; then

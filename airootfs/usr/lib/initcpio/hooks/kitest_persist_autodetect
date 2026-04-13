@@ -22,7 +22,8 @@ has_arg() {
 }
 
 run_hook() {
-  local desired_label archiso_uuid dev real type uuid
+  local desired_label archiso_uuid dev real type uuid best_real
+  local best_sectors sectors base
 
   has_arg "cow_autodetect=1" || return 0
 
@@ -31,6 +32,13 @@ run_hook() {
   [ -e "/dev/disk/by-label/${desired_label}" ] && return 0
 
   archiso_uuid="$(parse_arg_value archisosearchuuid 2>/dev/null || true)"
+
+  # When several Linux filesystems exist (e.g. QEMU: ISO on vda + persist on vdb),
+  # picking the first /dev/disk/by-uuid/* match is nondeterministic and can point
+  # the overlay at the wrong device. Prefer the largest eligible partition whose
+  # UUID is not the archiso search UUID.
+  best_real=""
+  best_sectors=0
 
   for dev in /dev/disk/by-uuid/*; do
     [ -e "${dev}" ] || continue
@@ -45,10 +53,17 @@ run_hook() {
     esac
     [ -n "${archiso_uuid}" ] && [ "${uuid}" = "${archiso_uuid}" ] && continue
 
-    mkdir -p /dev/disk/by-label
-    ln -sf "${real}" "/dev/disk/by-label/${desired_label}"
-    return 0
+    base="${real##*/}"
+    [ -r "/sys/class/block/${base}/size" ] || continue
+    sectors="$(cat "/sys/class/block/${base}/size" 2>/dev/null || echo 0)"
+    [ "${sectors:-0}" -gt "${best_sectors:-0}" ] || continue
+    best_sectors="${sectors}"
+    best_real="${real}"
   done
 
+  [ -n "${best_real}" ] || return 0
+
+  mkdir -p /dev/disk/by-label
+  ln -sf "${best_real}" "/dev/disk/by-label/${desired_label}"
   return 0
 }
