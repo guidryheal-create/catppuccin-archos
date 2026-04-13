@@ -27,6 +27,10 @@ file_permissions=(
   ["/usr/local/bin/kitest-welcome"]="0:0:755"
   ["/usr/local/bin/kitest-desktop-extras.sh"]="0:0:755"
   ["/usr/local/bin/kitest-live-first-run.sh"]="0:0:755"
+  ["/usr/local/bin/kitest-install-hybrid"]="0:0:755"
+  ["/usr/local/bin/kitest-postinstall.sh"]="0:0:755"
+  ["/usr/lib/initcpio/hooks/kitest_persist_autodetect"]="0:0:755"
+  ["/usr/lib/initcpio/install/kitest_persist_autodetect"]="0:0:755"
   ["/usr/local/bin/kitten-apply-catppuccin-kvantum"]="0:0:755"
   ["/usr/local/bin/kitten-theme-selector"]="0:0:755"
 )

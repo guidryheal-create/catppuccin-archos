@@ -69,6 +69,11 @@ cat <<'EOF' >/etc/environment.d/99-qt.conf
 QT_QPA_PLATFORMTHEME=qt6ct
 EOF
 
+install -d -m0755 /etc/profile.d
+cat <<'EOF' >/etc/profile.d/qt-platformtheme.sh
+export QT_QPA_PLATFORMTHEME=qt6ct
+EOF
+
 _kitest_kvantum_has_themes() {
   local d
   d="$(find "${KVANTUM_SYSTEM_THEMES:-/usr/share/kvantum/themes}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -1 || true)"
@@ -223,6 +228,8 @@ else
 fi
 chmod +x /usr/local/bin/kitest-desktop-extras.sh
 chmod +x /usr/local/bin/kitest-live-first-run.sh
+chmod +x /usr/local/bin/kitest-install-hybrid 2>/dev/null || true
+chmod +x /usr/local/bin/kitest-postinstall.sh 2>/dev/null || true
 chmod +x /usr/local/bin/kitten-theme-selector 2>/dev/null || true
 chmod +x /usr/local/bin/kitten-apply-catppuccin-kvantum 2>/dev/null || true
 if [[ "${KITEST_DESKTOP_EXTRAS:-}" == "1" ]]; then

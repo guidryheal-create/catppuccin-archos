@@ -85,5 +85,5 @@ standard_dialogs=default
 style=kvantum
 EOF
 
-kdialog --title "$app_title" --msgbox "Catppuccin Kvantum applied for your user.\n\nTheme: $selected_theme\n\nThis only changed your HOME config.\nLog out and log back in for full effect." 2>/dev/null || true
+kdialog --title "$app_title" --msgbox "Catppuccin Kvantum applied for your user.\n\nTheme: $selected_theme\n\nYour next login will already use this by default. Restart currently open Qt apps to refresh them now." 2>/dev/null || true
 

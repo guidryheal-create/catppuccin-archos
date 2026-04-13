@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+log() {
+  printf '[kitest-install] %s\n' "$*"
+}
+
+ensure_target_mounted() {
+  local root_part=""
+
+  if findmnt -rn /mnt >/dev/null 2>&1; then
+    return 0
+  fi
+
+  log "/mnt is not mounted after archinstall; attempting recovery..."
+
+  # Prefer the currently mounted system root source when available.
+  root_part="$(lsblk -lpno NAME,MOUNTPOINT 2>/dev/null | awk '$2=="/"{print $1; exit}')"
+  if [[ -z "${root_part}" ]]; then
+    # Fallback: first whole disk + partition 1 (best-effort fallback).
+    local first_disk
+    first_disk="$(lsblk -dpno NAME 2>/dev/null | awk 'NR==1 {print; exit}')"
+    if [[ -n "${first_disk}" ]]; then
+      root_part="${first_disk}1"
+    fi
+  fi
+
+  if [[ -z "${root_part}" ]]; then
+    return 1
+  fi
+
+  mkdir -p /mnt
+  mount "${root_part}" /mnt
+  findmnt -rn /mnt >/dev/null 2>&1
+}
+
+if [[ "${EUID}" -ne 0 ]]; then
+  exec sudo -E /usr/local/bin/kitest-install-hybrid "$@"
+fi
+
+command -v archinstall >/dev/null 2>&1 || {
+  log "archinstall is not available."
+  exit 1
+}
+command -v arch-chroot >/dev/null 2>&1 || {
+  log "arch-chroot is not available."
+  exit 1
+}
+command -v lsblk >/dev/null 2>&1 || {
+  log "lsblk is not available."
+  exit 1
+}
+
+log "Starting archinstall (guided base install)..."
+archinstall "$@"
+
+if ! ensure_target_mounted; then
+  log "Could not find installed target mounted at /mnt."
+  log "Mount the new system to /mnt, then run:"
+  log "  sudo arch-chroot /mnt /usr/local/bin/kitest-postinstall.sh"
+  exit 1
+fi
+
+target_root="/mnt"
+log "Detected target at ${target_root}"
+
+install -d "${target_root}/root" "${target_root}/usr/share/kitest"
+cp /usr/local/bin/kitest-postinstall.sh "${target_root}/root/kitest-postinstall.sh"
+cp /usr/share/kitest/install-config.sh "${target_root}/usr/share/kitest/install-config.sh"
+chmod +x "${target_root}/root/kitest-postinstall.sh"
+
+log "Running deterministic Kitest post-install inside target..."
+arch-chroot "${target_root}" /root/kitest-postinstall.sh
+
+log "Hybrid install completed."

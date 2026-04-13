@@ -1,0 +1,54 @@
+#!/usr/bin/ash
+
+parse_arg_value() {
+  local key="$1" arg
+  for arg in $(cat /proc/cmdline); do
+    case "${arg}" in
+      "${key}"=*)
+        printf '%s\n' "${arg#*=}"
+        return 0
+        ;;
+    esac
+  done
+  return 1
+}
+
+has_arg() {
+  local key="$1" arg
+  for arg in $(cat /proc/cmdline); do
+    [ "${arg}" = "${key}" ] && return 0
+  done
+  return 1
+}
+
+run_hook() {
+  local desired_label archiso_uuid dev real type uuid
+
+  has_arg "cow_autodetect=1" || return 0
+
+  desired_label="$(parse_arg_value cow_label 2>/dev/null || true)"
+  [ -n "${desired_label}" ] || desired_label="KITEST_PERSIST"
+  [ -e "/dev/disk/by-label/${desired_label}" ] && return 0
+
+  archiso_uuid="$(parse_arg_value archisosearchuuid 2>/dev/null || true)"
+
+  for dev in /dev/disk/by-uuid/*; do
+    [ -e "${dev}" ] || continue
+    real="$(readlink -f "${dev}" 2>/dev/null || true)"
+    [ -b "${real}" ] || continue
+
+    type="$(blkid -s TYPE -o value "${real}" 2>/dev/null || true)"
+    uuid="$(blkid -s UUID -o value "${real}" 2>/dev/null || true)"
+    case "${type}" in
+      ext2|ext3|ext4|xfs|btrfs|f2fs) ;;
+      *) continue ;;
+    esac
+    [ -n "${archiso_uuid}" ] && [ "${uuid}" = "${archiso_uuid}" ] && continue
+
+    mkdir -p /dev/disk/by-label
+    ln -sf "${real}" "/dev/disk/by-label/${desired_label}"
+    return 0
+  done
+
+  return 0
+}

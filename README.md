@@ -160,13 +160,13 @@ Rolling base, CI, and “do we fork Arch?” are summarized in [docs/devops.md](
 
 Boot order is always: **firmware (Syslinux / systemd-boot) → Linux → SDDM → Plasma session**.
 
-The installer is **[archinstall](https://wiki.archlinux.org/title/Archinstall)** (TUI). Launch it from the **Install Kitest OS** desktop icon or application menu (**`konsole -e archinstall`**). A **first-run** autostart script (**`kitest-live-first-run`**) adds Flathub and tries **Brave** once per user (best-effort). If you only see a black screen, wait for **SDDM**, then log in as **`kitest`** (password **empty** / unset). If you changed the live user at build time, use `KITEST_LIVE_USER`’s value instead.
+The installer is **[archinstall](https://wiki.archlinux.org/title/Archinstall)** (TUI), launched through a **hybrid wrapper** from the **Install Kitest OS** desktop icon. The wrapper runs `sudo archinstall` and then enforces the Kitest post-install profile in the installed target (`arch-chroot /mnt`). A **first-run** autostart script (**`kitest-live-first-run`**) configures Flathub and applies the configured Flatpak bundle(s) once per user (best-effort). If you only see a black screen, wait for **SDDM**, then log in as **`kitest`** (password **empty** / unset). If you changed the live user at build time, use `KITEST_LIVE_USER`’s value instead.
 
 Optional package groups from the old Calamares netinstall are documented in **`/usr/share/kitest/netinstall-bundles.yaml`** and example JSON fragments in **`/usr/share/kitest/archinstall-examples/`** — merge **`packages`** into your saved **`archinstall`** configuration or pick the same names under **Additional packages** in the TUI.
 
-### Finding the persistence partition (`KITEST_PERSIST`)
+### Finding the persistence partition (auto-detect + `KITEST_PERSIST` fallback)
 
-Persistence uses **`cow_label=KITEST_PERSIST`**: the **filesystem label** must be exactly **`KITEST_PERSIST`** (underscores). A hyphenated label such as **`KITEST-PERSIST`** is a **different** name and will **not** match.
+Persistent boot now uses **`cow_autodetect=1`** plus **`cow_label=KITEST_PERSIST`** fallback. The initramfs hook auto-selects a writable Linux filesystem for the overlay when the fixed label is absent. Keeping a partition labeled **`KITEST_PERSIST`** is still recommended as an explicit fallback.
 
 On any Linux system (host or live session), check labels:
 
@@ -176,12 +176,12 @@ sudo blkid | grep -i kitest
 ls -l /dev/disk/by-label/
 ```
 
-You should see a line like **`LABEL="KITEST_PERSIST"`** and a symlink **`/dev/disk/by-label/KITEST_PERSIST`** once the partition exists.
+You should see a line like **`LABEL="KITEST_PERSIST"`** and a symlink **`/dev/disk/by-label/KITEST_PERSIST`** when using explicit label mode; otherwise auto-detect can still pick a suitable writable partition.
 
 ### USB flash drive
 
 1. Write the ISO to the stick (first partition is the ISO / FAT volume from `mkarchiso`).
-2. For **persistence**, add another partition on the **same** USB device (e.g. **ext4**) and set its label:
+2. For **persistence**, add another partition on the **same** USB device (e.g. **ext4**). Labeling it `KITEST_PERSIST` is recommended:
 
    ```bash
    sudo mkfs.ext4 -L KITEST_PERSIST /dev/sdXN
@@ -189,9 +189,9 @@ You should see a line like **`LABEL="KITEST_PERSIST"`** and a symlink **`/dev/di
 
    Replace **`/dev/sdXN`** with your second partition (see `lsblk`). **Do not** put that label on the ISO partition itself.
 
-3. Boot **Kitest OS - live session** for normal RAM overlay, or **Kitest OS - persistent live** only when that second partition is present.
+3. Boot **Kitest OS - live session** for normal RAM overlay, or **Kitest OS - persistent live** when that second partition is present.
 
-**“Failed to mount root device” / “can’t access TTY” / emergency shell:** this is an **initramfs / archiso** problem (finding the ISO + `airootfs.sfs`, or the persistence overlay) — it happens **before** Plasma or [`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) (that script runs at **ISO build** time, not on boot). It is **not** Kvantum/theme-related. Typical causes: **persistent** boot without a valid **`KITEST_PERSIST`** partition, bad/corrupt ISO, wrong kernel cmdline, or flaky USB. Boot **live session** first; try **`copytoram`** / **`rd.debug`** per [archiso boot params](https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio-archiso/-/blob/master/docs/README.bootparams).
+**“Failed to mount root device” / “can’t access TTY” / emergency shell:** this is an **initramfs / archiso** problem (finding the ISO + `airootfs.sfs`, or the persistence overlay) — it happens **before** Plasma or [`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) (that script runs at **ISO build** time, not on boot). It is **not** Kvantum/theme-related. Typical causes: unsuitable persistence disk/filesystem, bad/corrupt ISO, wrong kernel cmdline, or flaky USB. Boot **live session** first; try **`copytoram`** / **`rd.debug`** per [archiso boot params](https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio-archiso/-/blob/master/docs/README.bootparams).
 
 This profile uses **`archisosearchuuid=`** (substituted by **`mkarchiso`**) and **`archisobasedir=arch`** — see [`profiledef.sh`](profiledef.sh). Full checklist: **[`docs/troubleshooting-initramfs.md`](docs/troubleshooting-initramfs.md)**.
 
@@ -250,8 +250,9 @@ Without that disk, use the default **live session** entry. If you see **overlayf
 
 ### archinstall / Konsole
 
-1. Open **Konsole** and run **`archinstall`**, or use the **Install Kitest OS** launcher.
-2. If **`pacman-key`** / mirror errors appear inside **archinstall**, see [archinstall known issues](https://archinstall.readthedocs.io/en/latest/help/known_issues.html) (e.g. refresh **`archlinux-keyring`**).
+1. Use the **Install Kitest OS** launcher (recommended): it runs the hybrid flow (`sudo archinstall` + enforced Kitest post-install).
+2. You can still run **`archinstall`** manually for pure upstream behavior.
+3. If **`pacman-key`** / mirror errors appear inside **archinstall**, see [archinstall known issues](https://archinstall.readthedocs.io/en/latest/help/known_issues.html) (e.g. refresh **`archlinux-keyring`**).
 
 The live image sets SDDM **`DisplayServer=x11`** in [`airootfs/etc/sddm.conf.d/10-x11-greeter.conf`](airootfs/etc/sddm.conf.d/10-x11-greeter.conf) so the greeter stays on X11.
 
@@ -281,11 +282,11 @@ Project notes for archiso + this profile: [`.skill/SKILL.md`](.skill/SKILL.md). 
 
 `pacman.conf` uses **Rackspace and Leaseweb first**, **`geo.mirror.pkgbuild.com` last**, plus **`ParallelDownloads = 3`**, so huge `pacstrap` runs are less likely to hit SSL resets on the CDN mid-transaction.
 
-Optional **Flatpak** apps: first-run tries **Brave**; full extras (Steam, Flatseal, …) via [`kitest-desktop-extras.sh`](airootfs/usr/local/bin/kitest-desktop-extras.sh) or set **`KITEST_DESKTOP_EXTRAS=1`** at image build time.
+Optional **Flatpak** apps are controlled by [`airootfs/usr/share/kitest/install-config.sh`](airootfs/usr/share/kitest/install-config.sh). By default, first-run and hybrid post-install keep the default bundle and add the Kitest extra bundle.
 
 ## Themes (Catppuccin Kvantum default; Breeze via selector)
 
-[`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) installs Catppuccin assets into **`/usr/share/kvantum/themes/`** (system-wide; **`/usr/share/kitten-themes/kvantum`** is a symlink to the same tree). It writes **`~/.config/Kvantum/kvantum.kvconfig`** with a **`theme=`** name that resolves to those directories (no per-user copy of SVG/theme files). The same defaults are applied to **`/etc/skel`** before the live user is created, so **archinstall-created accounts** inherit qt6ct + Kvantum. **`QT_QPA_PLATFORMTHEME=qt6ct`** is set in **`/etc/environment.d/99-qt.conf`**. Use **Kitten Theme Selector** to switch to **Breeze** if a VM shows a black or partial desktop.
+[`customize_airootfs.sh`](airootfs/root/customize_airootfs.sh) installs Catppuccin assets into **`/usr/share/kvantum/themes/`** (system-wide; **`/usr/share/kitten-themes/kvantum`** is a symlink to the same tree). It writes **`~/.config/Kvantum/kvantum.kvconfig`** with a **`theme=`** name that resolves to those directories (no per-user copy of SVG/theme files). The same defaults are applied to **`/etc/skel`** before the live user is created, so **archinstall-created accounts** inherit qt6ct + Kvantum. **`QT_QPA_PLATFORMTHEME=qt6ct`** is exported via **`/etc/environment.d/99-qt.conf`** and **`/etc/profile.d/qt-platformtheme.sh`** so the theme state is active by default at login.
 
 ### Kitten Theme Selector (user-only; safe defaults)
 
@@ -315,7 +316,7 @@ It is implemented by:
   - sets `style=kvantum` in `~/.config/qt5ct/qt5ct.conf` and `~/.config/qt6ct/qt6ct.conf`
   - writes `~/.config/plasma-workspace/env/kitten-qt-platformtheme.sh` to export `QT_QPA_PLATFORMTHEME=qt6ct` **for that user only**
 
-After switching, **log out and log back in** for the cleanest apply (Plasma reads `plasma-workspace/env/` at session start).
+After switching, new logins pick the theme automatically; restart currently-open Qt apps for immediate refresh.
 
 #### Workflow diagram
 

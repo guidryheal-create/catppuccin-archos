@@ -14,3 +14,4 @@ ffmpegthumbs
 # App store + Flatpak integration (GUI); flatpak package is in 30-theme-fonts.list
 packagekit
 discover
+xorg-xrandr

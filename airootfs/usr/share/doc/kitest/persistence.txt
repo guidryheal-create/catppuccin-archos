@@ -1,8 +1,8 @@
 Kitest OS - persistent live overlay (USB)
 ==========================================
 
-This uses mkinitcpio-archiso’s **cow_label** option (see upstream boot parameter
-docs). It is **not** the installer: you still get **SDDM -> Plasma**
+This uses mkinitcpio-archiso with **cow_autodetect=1** and **cow_label=KITEST_PERSIST**
+fallback (see upstream boot parameter docs). It is **not** the installer: you still get **SDDM -> Plasma**
 like the default live entry; the only difference is where the overlay is stored.
 
 If you see **“failed to mount root device”** / **“can’t access TTY”**, that is an
@@ -20,8 +20,8 @@ Boot menu names (match systemd-boot / Syslinux; ASCII hyphens for BIOS compatibi
     Same, with speakup.
 
   * Kitest OS - persistent live (USB, ..., BIOS / UEFI)
-    Overlay on a partition whose **filesystem label** is **KITEST_PERSIST**
-    (underscores, not hyphens).
+    Overlay auto-detected on a writable Linux partition. If available,
+    **KITEST_PERSIST** is used as explicit fallback.
 
 Quick setup (USB)
 -----------------
@@ -30,12 +30,12 @@ Quick setup (USB)
 
 2. Add a second partition on the same drive (e.g. ext4).
 
-3. Set the filesystem label **exactly** (underscore between words):
+3. Recommended: set filesystem label **exactly** (underscore between words):
 
      KITEST_PERSIST
 
-   Wrong: `KITEST-PERSIST` -- that is a **different** label; the kernel will not
-   match **cow_label=KITEST_PERSIST**.
+   Wrong: `KITEST-PERSIST` -- that is a **different** label and will not match
+   the fallback **cow_label=KITEST_PERSIST**.
 
 4. Under Linux the device link looks like:
 
@@ -52,15 +52,15 @@ Quick setup (USB)
 Notes
 -----
 
-- **First-run** (Flathub + Brave, best-effort) uses **xdg autostart** once per user.
-- Install the system with **archinstall** from the **Install Kitest OS** desktop icon
-  or run **`archinstall`** in a terminal. Optional package groups: **`/usr/share/kitest/archinstall-examples/`**
+- **First-run** (Flathub + configured Flatpak bundles, best-effort) uses **xdg autostart** once per user.
+- Install the system with the **Install Kitest OS** desktop icon (hybrid: `sudo archinstall` + enforced Kitest post-install),
+  or run **`archinstall`** in a terminal for upstream-only behavior. Optional package groups: **`/usr/share/kitest/archinstall-examples/`**
   and **`/usr/share/kitest/netinstall-bundles.yaml`** (reference).
 - Persistence needs a **writable** partition; DVD / read-only media cannot
   store the overlay.
-- **QEMU / Proxmox / libvirt:** same rule -- attach a **second** virtual disk,
-  format it with **mkfs.ext4 -L KITEST_PERSIST** (from the host or another VM),
-  then boot **persistent live**. Otherwise use **live session** (see `README.md`).
+- **QEMU / Proxmox / libvirt:** same rule -- attach a **second** writable virtual disk.
+  Labeling it **KITEST_PERSIST** is recommended, but autodetect can use another suitable Linux filesystem.
+  Otherwise use **live session** (see `README.md`).
 - **"Failed to mount root" / overlayfs errors:** boot **live session** first.
   If the extra disk is wrong format or label, **cow_label** can fail.
 - **"Failed to mount root" / initramfs:** see **initramfs-troubleshooting.txt** in

@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+
+build() {
+  add_binary /usr/bin/blkid
+  add_binary /usr/bin/readlink
+  add_runscript
+}
+
+help() {
+  cat <<'EOF'
+Best-effort persistence autodetect for archiso cow_label.
+EOF
+}

@@ -84,7 +84,7 @@ case "$choose_mode" in
     disable_user_qt_platformtheme
     set_qtct_style "$qt5ct_conf" "breeze"
     set_qtct_style "$qt6ct_conf" "breeze"
-    kdialog --title "$app_title" --msgbox "Set to Breeze (safe).\\n\\nThis only changed your user config.\\n\\nFor full effect, log out and log back in." 2>/dev/null || true
+    kdialog --title "$app_title" --msgbox "Set to Breeze (safe).\\n\\nNew logins use this immediately. Restart currently open Qt apps to refresh them now." 2>/dev/null || true
     ;;
 
   catppuccin)
@@ -129,7 +129,7 @@ case "$choose_mode" in
     set_qtct_style "$qt6ct_conf" "kvantum"
     enable_user_qt_platformtheme "qt6ct"
 
-    kdialog --title "$app_title" --msgbox "Catppuccin Kvantum enabled for your user.\\n\\nApplied theme: $selected_theme\\n\\nFor full effect, log out and log back in." 2>/dev/null || true
+    kdialog --title "$app_title" --msgbox "Catppuccin Kvantum enabled for your user.\\n\\nApplied theme: $selected_theme\\n\\nNew logins use this immediately. Restart currently open Qt apps to refresh them now." 2>/dev/null || true
     ;;
 
   *)

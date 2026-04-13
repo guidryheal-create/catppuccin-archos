@@ -18,13 +18,14 @@ Kernel command lines in [`syslinux/archiso_sys-linux.cfg`](../syslinux/archiso_s
 
 Persistence adds:
 
-- **`cow_label=KITEST_PERSIST`** — must match a **real** filesystem label on another partition.
+- **`cow_autodetect=1`** — initramfs hook can auto-select a writable Linux filesystem.
+- **`cow_label=KITEST_PERSIST`** — explicit fallback label for deterministic setups.
 
 Initramfs hooks are defined in [`airootfs/etc/mkinitcpio.conf.d/archiso.conf`](../airootfs/etc/mkinitcpio.conf.d/archiso.conf) (must include **`archiso`**, **`archiso_loop_mnt`**, etc.).
 
 ## Most likely causes
 
-1. **Persistence** — booting **“persistent live”** without a partition labeled **`KITEST_PERSIST`**, wrong label, or wrong device. **Test:** boot **“live session”** only (no `cow_label`). If that works, fix persistence layout/label.
+1. **Persistence** — booting **“persistent live”** without a suitable writable Linux filesystem, or with a broken fallback label/device. **Test:** boot **“live session”** only (no persistence parameters). If that works, fix persistence layout/filesystem.
 2. **Bad / missing squashfs** — incomplete or corrupted ISO build; **`arch/x86_64/airootfs.sfs`** missing or truncated. **Test:** loop-mount the ISO and `ls arch/x86_64/*.sfs`.
 3. **Wrong or edited kernel cmdline** — if you edit GRUB/Syslinux and break **`archisosearchuuid`** or **`archisobasedir`**, the image will not be found.
 4. **Unreliable USB** — try **`copytoram`** on the kernel line (see [archiso boot parameters](https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio-archiso/-/blob/master/docs/README.bootparams)).

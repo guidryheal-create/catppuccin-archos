@@ -2,9 +2,9 @@
 Type=Application
 Version=1.0
 Name=Install Kitest OS
-Comment=Run archinstall (guided Arch installer)
-Exec=konsole -e archinstall
-TryExec=/usr/bin/archinstall
+Comment=Run hybrid install (archinstall + Kitest post-install)
+Exec=konsole -e /usr/local/bin/kitest-install-hybrid
+TryExec=/usr/local/bin/kitest-install-hybrid
 Icon=system-software-install
 Terminal=false
 StartupNotify=true
