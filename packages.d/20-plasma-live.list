@@ -1,7 +1,7 @@
 # Plasma desktop + session (meta + explicit apps; avoid pacman *groups*).
 plasma-meta
 plasma-x11-session
-plasma-wayland-session
+plasma-workspace
 networkmanager
 plasma-nm
 sddm
@@ -13,4 +13,4 @@ kio-extras
 ffmpegthumbs
 # App store + Flatpak integration (GUI); flatpak package is in 30-theme-fonts.list
 packagekit
-plasma-discover
+discover

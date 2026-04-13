@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Kitten Theme Selector
+Comment=Switch themes (user-only; safe defaults)
+Exec=/usr/local/bin/kitten-theme-selector
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=Settings;DesktopSettings;Qt;
+StartupNotify=true

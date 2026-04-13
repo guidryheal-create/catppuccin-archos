@@ -1,0 +1,3 @@
+{
+  "packages": ["nvidia-open", "nvidia-utils", "nvidia-settings"]
+}

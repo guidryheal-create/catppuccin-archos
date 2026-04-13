@@ -126,7 +126,7 @@ xl2tpd
 zsh
 plasma-meta
 plasma-x11-session
-plasma-wayland-session
+plasma-workspace
 networkmanager
 plasma-nm
 sddm
@@ -137,7 +137,7 @@ dolphin
 kio-extras
 ffmpegthumbs
 packagekit
-plasma-discover
+discover
 papirus-icon-theme
 kvantum
 kvantum-theme-materia

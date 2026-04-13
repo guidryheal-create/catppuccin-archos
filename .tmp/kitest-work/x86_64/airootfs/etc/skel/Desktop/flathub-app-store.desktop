@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Flathub
+Comment=Apps for Linux (https://flathub.org)
+Exec=xdg-open https://flathub.org/en
+Icon=system-software-install
+Terminal=false
+Categories=Qt;PackageManager;

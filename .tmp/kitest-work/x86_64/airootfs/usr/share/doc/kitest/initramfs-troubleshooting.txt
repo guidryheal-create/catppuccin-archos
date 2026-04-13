@@ -1,0 +1,17 @@
+"Failed to mount root device" / "can't access TTY" — initramfs (not Kvantum/themes)
+===================================================================================
+
+This happens BEFORE SDDM/Plasma. customize_airootfs.sh runs only when BUILDING the ISO.
+
+• Boot "Kitest OS — live session" first. Use "persistent live" ONLY with a 2nd partition
+  labeled KITEST_PERSIST (underscores).
+
+• Persistence problems: see persistence.txt in this directory.
+
+• Try kernel parameter: copytoram  (see archiso README.bootparams on GitLab)
+
+• Verify ISO: arch/x86_64/ must contain the squashfs image (airootfs.sfs or as built).
+
+• This profile uses archisosearchuuid= and archisobasedir=arch (see profiledef.sh).
+
+Full checklist (developers): docs/troubleshooting-initramfs.md in the source tree.
