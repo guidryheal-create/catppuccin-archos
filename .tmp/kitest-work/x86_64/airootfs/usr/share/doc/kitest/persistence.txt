@@ -52,10 +52,13 @@ Quick setup (USB)
 Notes
 -----
 
-- **First-run** (Flathub + Brave, best-effort) uses **xdg autostart** once per user.
-- Install the system with **archinstall** from the **Install Kitest OS** desktop icon
-  or run **`archinstall`** in a terminal. Optional package groups: **`/usr/share/kitest/archinstall-examples/`**
-  and **`/usr/share/kitest/netinstall-bundles.yaml`** (reference).
+- **First-run** applies Catppuccin/Kvantum for test sessions and configures
+  Flathub extras (best-effort) via **xdg autostart** once per user.
+- Install the system with **Install Kitest OS** (Phase 1 only):
+  `pacman-key --init` -> `pacman -Sy archinstall` -> `archinstall`.
+  Post-install belongs to first boot in the installed system.
+  Optional package groups: **`/usr/share/kitest/archinstall-examples/`** and
+  **`/usr/share/kitest/netinstall-bundles.yaml`** (reference).
 - Persistence needs a **writable** partition; DVD / read-only media cannot
   store the overlay.
 - **QEMU / Proxmox / libvirt:** same rule -- attach a **second** virtual disk,

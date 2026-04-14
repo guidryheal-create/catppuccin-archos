@@ -7,6 +7,11 @@ mark="$HOME/.config/kitest-live-setup-done"
 
 mkdir -p "$(dirname "$mark")"
 
+# Ensure Qt/KDE theme is applied for live testing on first login.
+if command -v /usr/local/bin/kitten-apply-catppuccin-kvantum >/dev/null 2>&1; then
+  KITTEN_APPLY_NONINTERACTIVE=1 /usr/local/bin/kitten-apply-catppuccin-kvantum >/dev/null 2>&1 || true
+fi
+
 if [[ "${KITEST_OFFLINE:-0}" == "1" ]]; then
   touch "$mark"
   exit 0

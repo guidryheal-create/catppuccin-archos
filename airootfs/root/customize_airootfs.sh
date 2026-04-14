@@ -122,6 +122,8 @@ if [[ "${KITEST_BUNDLE_CATPPUCCIN_KVANTUM:-1}" != "0" ]]; then
 
   install -d -m0755 /usr/share/kitten-themes
   ln -sfn ../kvantum/themes /usr/share/kitten-themes/kvantum
+  install -d -m0755 /usr/local/share/kitten-themes
+  ln -sfn /usr/share/kvantum/themes /usr/local/share/kitten-themes/kvantum
 fi
 
 # Seed qt6ct + Kvantum to use themes from the system path only:
@@ -210,6 +212,7 @@ echo "${LIVE_USER} ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/${LIVE_USER}"
 chmod 440 "/etc/sudoers.d/${LIVE_USER}"
 
 systemctl enable sddm
+systemctl enable pacman-init.service 2>/dev/null || true
 systemctl enable qemu-guest-agent 2>/dev/null || true
 
 systemctl disable systemd-networkd.service 2>/dev/null || true

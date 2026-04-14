@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Kitest live first-run
-Comment=Flathub + Kitest Flatpak bundles (best-effort)
+Comment=Apply Catppuccin on first login + Flatpak extras (best-effort)
 Exec=/usr/local/bin/kitest-live-first-run.sh
 TryExec=/usr/local/bin/kitest-live-first-run.sh
 OnlyShowIn=KDE;

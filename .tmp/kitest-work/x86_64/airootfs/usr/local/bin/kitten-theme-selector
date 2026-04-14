@@ -89,13 +89,18 @@ case "$choose_mode" in
 
   catppuccin)
     theme_root=""
-    if [[ -d "/usr/share/kvantum/themes" ]] && compgen -G "/usr/share/kvantum/themes/*" >/dev/null 2>&1; then
-      theme_root="/usr/share/kvantum/themes"
-    elif [[ -d "/usr/share/kitten-themes/kvantum" ]]; then
-      theme_root="/usr/share/kitten-themes/kvantum"
-    fi
+    for candidate in \
+      /usr/local/share/kvantum/themes \
+      /usr/share/kvantum/themes \
+      /usr/local/share/kitten-themes/kvantum \
+      /usr/share/kitten-themes/kvantum; do
+      if [[ -d "$candidate" ]] && compgen -G "$candidate/*" >/dev/null 2>&1; then
+        theme_root="$candidate"
+        break
+      fi
+    done
     if [[ -z "$theme_root" || ! -d "$theme_root" ]]; then
-      kdialog --title "$app_title" --error "No bundled themes found under:\\n/usr/share/kvantum/themes\\n(or legacy /usr/share/kitten-themes/kvantum)\\n\\nRebuild the ISO with KITEST_BUNDLE_CATPPUCCIN_KVANTUM=1 (default), or install themes manually." 2>/dev/null || true
+      kdialog --title "$app_title" --error "No bundled themes found under:\\n/usr/local/share/kvantum/themes\\n/usr/share/kvantum/themes\\n/usr/local/share/kitten-themes/kvantum\\n/usr/share/kitten-themes/kvantum\\n\\nRebuild the ISO with KITEST_BUNDLE_CATPPUCCIN_KVANTUM=1 (default), or install themes manually." 2>/dev/null || true
       exit 1
     fi
 

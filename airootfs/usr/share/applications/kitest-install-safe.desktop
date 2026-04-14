@@ -2,7 +2,7 @@
 Type=Application
 Version=1.0
 Name=Install Kitest OS
-Comment=Run hybrid install (archinstall + Kitest post-install)
+Comment=Run archinstall (clean Phase 1 install)
 Exec=konsole -e /usr/local/bin/kitest-install-hybrid
 TryExec=/usr/local/bin/kitest-install-hybrid
 Icon=system-software-install

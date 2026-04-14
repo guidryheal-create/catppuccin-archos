@@ -1,9 +1,9 @@
 Kitest OS - persistent live overlay (USB)
 ==========================================
 
-This uses mkinitcpio-archiso with **cow_autodetect=1** and marker-first selection
-(**cow_marker=/kitest-persist.marker**) with **cow_label=KITEST_PERSIST** fallback
-(see upstream boot parameter docs). It is **not** the installer: you still get
+This uses mkinitcpio-archiso with **cow_autodetect=1** and explicit
+**cow_label=KITEST_PERSIST** (see upstream boot parameter docs). It is
+**not** the installer: you still get
 **SDDM -> Plasma** like the default live entry; the only difference is where the
 overlay is stored.
 
@@ -22,8 +22,7 @@ Boot menu names (match systemd-boot / Syslinux; ASCII hyphens for BIOS compatibi
     Same, with speakup.
 
   * Kitest OS - persistent live (USB, ..., BIOS / UEFI)
-    Overlay auto-detected on a writable Linux partition. If available,
-    **KITEST_PERSIST** is used as explicit fallback.
+    Overlay on a partition whose filesystem label is **KITEST_PERSIST**.
 
 Quick setup (USB)
 -----------------
@@ -32,24 +31,20 @@ Quick setup (USB)
 
 2. Add a second partition on the same drive (e.g. ext4).
 
-3. Recommended: create marker file at filesystem root:
-
-     /kitest-persist.marker
-
-4. Recommended fallback: set filesystem label **exactly** (underscore between words):
+3. Set filesystem label **exactly** (underscore between words):
 
      KITEST_PERSIST
 
    Wrong: `KITEST-PERSIST` -- that is a **different** label and will not match
    the fallback **cow_label=KITEST_PERSIST**.
 
-5. Under Linux the device link looks like:
+4. Under Linux the device link looks like:
 
      /dev/disk/by-label/KITEST_PERSIST
 
    (If your tools show a hyphen, you used the wrong label.)
 
-6. Boot **"Kitest OS - persistent live (USB, ...)"** in the firmware menu.
+5. Boot **"Kitest OS - persistent live (USB, ...)"** in the firmware menu.
 
 6. Session changes are stored on that partition (overlay path follows archiso
    rules, typically under a `persistent_<ISO volume label>/`-style path on
@@ -59,13 +54,15 @@ Notes
 -----
 
 - **First-run** (Flathub + configured Flatpak bundles, best-effort) uses **xdg autostart** once per user.
-- Install the system with the **Install Kitest OS** desktop icon (hybrid: `sudo archinstall` + enforced Kitest post-install),
-  or run **`archinstall`** in a terminal for upstream-only behavior. Optional package groups: **`/usr/share/kitest/archinstall-examples/`**
-  and **`/usr/share/kitest/netinstall-bundles.yaml`** (reference).
+- Install the system with the **Install Kitest OS** desktop icon (Phase 1 only):
+  `pacman-key --init` -> `pacman -Sy archinstall` -> `archinstall`.
+  Post-install configuration belongs to first boot in the installed system.
+  Optional package groups: **`/usr/share/kitest/archinstall-examples/`** and
+  **`/usr/share/kitest/netinstall-bundles.yaml`** (reference).
 - Persistence needs a **writable** partition; DVD / read-only media cannot
   store the overlay.
-- **QEMU / Proxmox / libvirt:** same rule -- attach a **second** writable virtual disk.
-  Marker file is preferred; labeling **KITEST_PERSIST** remains the fallback.
+- **QEMU / Proxmox / libvirt:** same rule -- attach a **second** writable virtual disk,
+  format and label it **KITEST_PERSIST**, then boot the persistent entry.
   Otherwise use **live session** (see `README.md`).
 - **"Failed to mount root" / overlayfs errors:** boot **live session** first.
   If the extra disk is wrong format or label, **cow_label** can fail.

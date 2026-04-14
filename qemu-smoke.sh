@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Boot ISO in QEMU.
 # - Live session works with ISO only.
-# - Persistent live prefers marker-file detection, with KITEST_PERSIST label fallback.
+# - Persistent live uses explicit persistence label: KITEST_PERSIST.
 #   Use QEMU_PERSIST=1 (recommended) to auto-create/attach a raw ext4 image, or
 #   provide QEMU_PERSIST_IMG=/path/to/raw.img (already formatted/labeled).
 set -euo pipefail
@@ -15,13 +15,11 @@ Environment:
   MEM=4096                 RAM in MiB
   QEMU_CPU=...             override CPU model string
 
-  QEMU_PERSIST=1           auto-create/attach persistence disk (raw ext4, marker + LABEL=KITEST_PERSIST)
-  QEMU_PERSIST_IMG=...     path to persistence disk image (raw recommended; should include marker or label fallback)
+  QEMU_PERSIST=1           auto-create/attach persistence disk (raw ext4, LABEL=KITEST_PERSIST)
+  QEMU_PERSIST_IMG=...     path to persistence disk image (raw recommended; should include LABEL=KITEST_PERSIST)
   QEMU_PERSIST_SIZE=8G     size when auto-creating (default: 8G)
   QEMU_PERSIST_PATH=...    path when auto-creating (default: alongside ISO, *.persist.img)
   QEMU_PERSIST_KEEP=1      keep existing auto persistence image (default: recreate for clean testing)
-  QEMU_PERSIST_MARKER_PATH=/kitest-persist.marker  marker file path used by initramfs autodetect
-
   The filesystem label must be exactly KITEST_PERSIST (underscores; not KITTEN_PERSIST or KITEST-PERSIST).
   Formatting a raw file on the host is not enough: pass QEMU_PERSIST_IMG=... or QEMU_PERSIST=1 so QEMU
   attaches that disk; otherwise the "persistent live" boot entry has nothing to mount.
@@ -176,46 +174,14 @@ persist_label_ok() {
   [[ "$label" == "KITEST_PERSIST" ]]
 }
 
-persist_marker_ok() {
-  local img="$1"
-  local marker_path="${QEMU_PERSIST_MARKER_PATH:-/kitest-persist.marker}"
-  command -v debugfs >/dev/null 2>&1 || return 1
-  debugfs -R "stat ${marker_path}" "$img" >/dev/null 2>&1
-}
-
-ensure_persist_marker() {
-  local img="$1"
-  local marker_path="${QEMU_PERSIST_MARKER_PATH:-/kitest-persist.marker}"
-  local marker_parent marker_name tmpfile
-  command -v debugfs >/dev/null 2>&1 || return 1
-
-  marker_parent="${marker_path%/*}"
-  marker_name="${marker_path##*/}"
-  [[ -n "$marker_parent" && "$marker_parent" != "$marker_path" ]] || marker_parent="/"
-
-  tmpfile="$(mktemp)"
-  printf 'kitest persistence marker\n' >"$tmpfile"
-
-  if [[ "$marker_parent" != "/" ]]; then
-    debugfs -w -R "mkdir ${marker_parent}" "$img" >/dev/null 2>&1 || true
-  fi
-  debugfs -w -R "write $tmpfile ${marker_parent%/}/${marker_name}" "$img" >/dev/null 2>&1 || true
-  rm -f "$tmpfile"
-  persist_marker_ok "$img"
-}
-
 mk_persist_img() {
   local img="$1"
   local size="$2"
   require_cmd truncate
   require_cmd mkfs.ext4
-  echo "Creating persistence disk: $img ($size, marker + LABEL=KITEST_PERSIST)" >&2
+  echo "Creating persistence disk: $img ($size, LABEL=KITEST_PERSIST)" >&2
   truncate -s "$size" "$img"
   mkfs.ext4 -F -L KITEST_PERSIST "$img" >/dev/null
-  ensure_persist_marker "$img" || {
-    echo "Warning: failed to write marker ${QEMU_PERSIST_MARKER_PATH:-/kitest-persist.marker} into $img" >&2
-    echo "         Label fallback (KITEST_PERSIST) is still available." >&2
-  }
 }
 
 persist_img="${QEMU_PERSIST_IMG:-}"
@@ -251,12 +217,6 @@ if [[ -n "$persist_img" ]]; then
     echo "Persistence image does not look like LABEL=KITEST_PERSIST: $persist_img" >&2
     echo "Hint: mkfs.ext4 -F -L KITEST_PERSIST \"$persist_img\"  (or use QEMU_PERSIST=1 to auto-create)" >&2
     exit 1
-  fi
-
-  if persist_marker_ok "$persist_img"; then
-    echo "Verified marker ${QEMU_PERSIST_MARKER_PATH:-/kitest-persist.marker} in persistence image." >&2
-  else
-    echo "Marker ${QEMU_PERSIST_MARKER_PATH:-/kitest-persist.marker} not found; relying on cow_label fallback." >&2
   fi
 
   echo "Attaching persistence disk: $persist_img" >&2

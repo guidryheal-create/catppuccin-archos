@@ -2,6 +2,7 @@
 set -euo pipefail
 
 app_title="Kitten: Apply Catppuccin (Kvantum)"
+noninteractive="${KITTEN_APPLY_NONINTERACTIVE:-0}"
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -10,14 +11,21 @@ need_cmd() {
   }
 }
 
-need_cmd kdialog
+if [[ "$noninteractive" != "1" ]]; then
+  need_cmd kdialog
+fi
 
 theme_root=""
-if [[ -d "/usr/share/kvantum/themes" ]] && compgen -G "/usr/share/kvantum/themes/*" >/dev/null 2>&1; then
-  theme_root="/usr/share/kvantum/themes"
-elif [[ -d "/usr/share/kitten-themes/kvantum" ]]; then
-  theme_root="/usr/share/kitten-themes/kvantum"
-fi
+for candidate in \
+  /usr/local/share/kvantum/themes \
+  /usr/share/kvantum/themes \
+  /usr/local/share/kitten-themes/kvantum \
+  /usr/share/kitten-themes/kvantum; do
+  if [[ -d "$candidate" ]] && compgen -G "$candidate/*" >/dev/null 2>&1; then
+    theme_root="$candidate"
+    break
+  fi
+done
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
 kvantum_conf="$config_dir/Kvantum/kvantum.kvconfig"
 kvantum_user_themes="$config_dir/Kvantum/themes"
@@ -27,13 +35,17 @@ plasma_env_dir="$config_dir/plasma-workspace/env"
 plasma_env_file="$plasma_env_dir/kitten-qt-platformtheme.sh"
 
 if [[ -z "$theme_root" || ! -d "$theme_root" ]]; then
-  kdialog --title "$app_title" --error "No bundled Catppuccin Kvantum themes found under:\n/usr/share/kvantum/themes\n(or legacy /usr/share/kitten-themes/kvantum)\n\nRebuild the ISO with KITEST_BUNDLE_CATPPUCCIN_KVANTUM=1 (default), or use the Theme Selector to install manually." 2>/dev/null || true
+  if [[ "$noninteractive" != "1" ]]; then
+    kdialog --title "$app_title" --error "No bundled Catppuccin Kvantum themes found under:\n/usr/local/share/kvantum/themes\n/usr/share/kvantum/themes\n/usr/local/share/kitten-themes/kvantum\n/usr/share/kitten-themes/kvantum\n\nRebuild the ISO with KITEST_BUNDLE_CATPPUCCIN_KVANTUM=1 (default), or use the Theme Selector to install manually." 2>/dev/null || true
+  fi
   exit 1
 fi
 
 mapfile -t theme_dirs < <(ls -1 "$theme_root" 2>/dev/null | sort -V)
 if [[ "${#theme_dirs[@]}" -eq 0 ]]; then
-  kdialog --title "$app_title" --error "No Kvantum themes found in:\n$theme_root" 2>/dev/null || true
+  if [[ "$noninteractive" != "1" ]]; then
+    kdialog --title "$app_title" --error "No Kvantum themes found in:\n$theme_root" 2>/dev/null || true
+  fi
   exit 1
 fi
 
@@ -58,7 +70,9 @@ fi
 mkdir -p "$kvantum_user_themes" "$(dirname "$kvantum_conf")" "$plasma_env_dir" "$(dirname "$qt5ct_conf")" "$(dirname "$qt6ct_conf")"
 rm -rf "$kvantum_user_themes/$selected_theme" 2>/dev/null || true
 cp -a "$theme_root/$selected_theme" "$kvantum_user_themes/" 2>/dev/null || {
-  kdialog --title "$app_title" --error "Failed to copy theme into your home directory." 2>/dev/null || true
+  if [[ "$noninteractive" != "1" ]]; then
+    kdialog --title "$app_title" --error "Failed to copy theme into your home directory." 2>/dev/null || true
+  fi
   exit 1
 }
 
@@ -85,5 +99,7 @@ standard_dialogs=default
 style=kvantum
 EOF
 
-kdialog --title "$app_title" --msgbox "Catppuccin Kvantum applied for your user.\n\nTheme: $selected_theme\n\nYour next login will already use this by default. Restart currently open Qt apps to refresh them now." 2>/dev/null || true
+if [[ "$noninteractive" != "1" ]]; then
+  kdialog --title "$app_title" --msgbox "Catppuccin Kvantum applied for your user.\n\nTheme: $selected_theme\n\nYour next login will already use this by default. Restart currently open Qt apps to refresh them now." 2>/dev/null || true
+fi
 

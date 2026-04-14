@@ -22,84 +22,15 @@ has_arg() {
 }
 
 run_hook() {
-  local desired_label marker_path archiso_uuid heuristic_enabled
-  local dev real type uuid best_real
-  local best_sectors sectors base
-  local scan_dir mounted
+  local desired_label
 
   has_arg "cow_autodetect=1" || return 0
 
   desired_label="$(parse_arg_value cow_label 2>/dev/null || true)"
   [ -n "${desired_label}" ] || desired_label="KITEST_PERSIST"
-  marker_path="$(parse_arg_value cow_marker 2>/dev/null || true)"
-  [ -n "${marker_path}" ] || marker_path="/kitest-persist.marker"
-  heuristic_enabled="$(parse_arg_value cow_autodetect_heuristic 2>/dev/null || true)"
-  [ -n "${heuristic_enabled}" ] || heuristic_enabled="0"
 
-  archiso_uuid="$(parse_arg_value archisosearchuuid 2>/dev/null || true)"
-  scan_dir="/run/kitest-persist-scan"
-  mkdir -p "${scan_dir}"
-
-  # Prefer explicit marker detection: this is deterministic across disk naming.
-  for dev in /dev/disk/by-uuid/*; do
-    [ -e "${dev}" ] || continue
-    real="$(readlink -f "${dev}" 2>/dev/null || true)"
-    [ -b "${real}" ] || continue
-
-    type="$(blkid -s TYPE -o value "${real}" 2>/dev/null || true)"
-    uuid="$(blkid -s UUID -o value "${real}" 2>/dev/null || true)"
-    case "${type}" in
-      ext2|ext3|ext4|xfs|btrfs|f2fs) ;;
-      *) continue ;;
-    esac
-    [ -n "${archiso_uuid}" ] && [ "${uuid}" = "${archiso_uuid}" ] && continue
-
-    mounted=0
-    if mount -o ro "${real}" "${scan_dir}" 2>/dev/null; then
-      mounted=1
-      if [ -e "${scan_dir}${marker_path}" ]; then
-        mkdir -p /dev/disk/by-label
-        ln -sf "${real}" "/dev/disk/by-label/${desired_label}"
-        umount "${scan_dir}" 2>/dev/null || true
-        return 0
-      fi
-    fi
-    [ "${mounted}" = "1" ] && umount "${scan_dir}" 2>/dev/null || true
-  done
-
-  # Fallback to explicit label if it already exists.
+  # Phase 1 safety: do not mount/scan candidate disks in initramfs.
+  # Only accept an explicitly labeled persistence partition.
   [ -e "/dev/disk/by-label/${desired_label}" ] && return 0
-
-  # Optional last-resort heuristic for legacy setups.
-  [ "${heuristic_enabled}" = "1" ] || return 0
-
-  best_real=""
-  best_sectors=0
-
-  for dev in /dev/disk/by-uuid/*; do
-    [ -e "${dev}" ] || continue
-    real="$(readlink -f "${dev}" 2>/dev/null || true)"
-    [ -b "${real}" ] || continue
-
-    type="$(blkid -s TYPE -o value "${real}" 2>/dev/null || true)"
-    uuid="$(blkid -s UUID -o value "${real}" 2>/dev/null || true)"
-    case "${type}" in
-      ext2|ext3|ext4|xfs|btrfs|f2fs) ;;
-      *) continue ;;
-    esac
-    [ -n "${archiso_uuid}" ] && [ "${uuid}" = "${archiso_uuid}" ] && continue
-
-    base="${real##*/}"
-    [ -r "/sys/class/block/${base}/size" ] || continue
-    sectors="$(cat "/sys/class/block/${base}/size" 2>/dev/null || echo 0)"
-    [ "${sectors:-0}" -gt "${best_sectors:-0}" ] || continue
-    best_sectors="${sectors}"
-    best_real="${real}"
-  done
-
-  [ -n "${best_real}" ] || return 0
-
-  mkdir -p /dev/disk/by-label
-  ln -sf "${best_real}" "/dev/disk/by-label/${desired_label}"
   return 0
 }

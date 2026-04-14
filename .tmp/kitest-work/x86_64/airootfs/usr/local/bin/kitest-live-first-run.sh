@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
-# One-time live session: Flathub + Brave (best-effort). Catppuccin/Qt is seeded in customize_airootfs.
+# One-time live session: configure theme + Flathub extras (best-effort).
 set -euo pipefail
 
 mark="$HOME/.config/kitest-live-setup-done"
 [[ -f "$mark" ]] && exit 0
 
 mkdir -p "$(dirname "$mark")"
+
+# Ensure Qt/KDE theme is applied for live testing on first login.
+if command -v /usr/local/bin/kitten-apply-catppuccin-kvantum >/dev/null 2>&1; then
+  KITTEN_APPLY_NONINTERACTIVE=1 /usr/local/bin/kitten-apply-catppuccin-kvantum >/dev/null 2>&1 || true
+fi
 
 if [[ "${KITEST_OFFLINE:-0}" == "1" ]]; then
   touch "$mark"
