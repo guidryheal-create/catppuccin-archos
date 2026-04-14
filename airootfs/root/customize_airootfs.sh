@@ -63,6 +63,8 @@ fi
 # -------------------------
 # Qt / Plasma: qt6ct + Kvantum (Catppuccin) on live — use kitten-theme-selector to switch back to Breeze.
 # -------------------------
+KITEST_DEFAULT_KVANTUM_THEME="${KITEST_DEFAULT_KVANTUM_THEME:-catppuccin-mocha-mauve}"
+
 rm -f /etc/environment.d/99-kvantum.conf 2>/dev/null || true
 install -d -m0755 /etc/environment.d
 cat <<'EOF' >/etc/environment.d/99-qt.conf
@@ -124,21 +126,27 @@ fi
 
 # Seed qt6ct + Kvantum to use themes from the system path only:
 #   /usr/share/kvantum/themes/<name>  (also linked from /usr/share/kitten-themes/kvantum)
-# Prefer a *mocha* Catppuccin folder when present. Used for /etc/skel (new users) and live user.
+# Prefer configured default theme, then any mocha variant as fallback.
+# Used for /etc/skel (new users) and live user.
 _kitest_seed_catppuccin_userconfig() {
   local home_dir="$1"
   local theme_root="/usr/share/kvantum/themes"
   local selected="" d
 
   [[ -d "$theme_root" ]] || return 0
+  if [[ -d "${theme_root}/${KITEST_DEFAULT_KVANTUM_THEME}" ]]; then
+    selected="${KITEST_DEFAULT_KVANTUM_THEME}"
+  fi
   shopt -s nullglob
-  for d in "$theme_root"/*; do
-    [[ -d "$d" ]] || continue
-    if [[ "$(basename "$d")" == *[Mm]ocha* ]]; then
-      selected="$(basename "$d")"
-      break
-    fi
-  done
+  if [[ -z "$selected" ]]; then
+    for d in "$theme_root"/*; do
+      [[ -d "$d" ]] || continue
+      if [[ "$(basename "$d")" == *[Mm]ocha* ]]; then
+        selected="$(basename "$d")"
+        break
+      fi
+    done
+  fi
   if [[ -z "$selected" ]]; then
     for d in "$theme_root"/*; do
       [[ -d "$d" ]] || continue

@@ -16,7 +16,7 @@ Arch Linux live ISO profile: Plasma desktop, **[archinstall](https://github.com/
 
 ## Build on Arch (native)
 
-Needs **root**. **Network is only required when a step can’t be satisfied from cache** (pacstrap downloads, optional Catppuccin git fetch, kernel deps/sources).
+Needs **root**. **Network is only required when a step can’t be satisfied from cache** (pacstrap downloads, kernel deps/sources).
 
 ```bash
 sudo ./build-iso.sh
@@ -164,9 +164,9 @@ The installer is **[archinstall](https://wiki.archlinux.org/title/Archinstall)**
 
 Optional package groups from the old Calamares netinstall are documented in **`/usr/share/kitest/netinstall-bundles.yaml`** and example JSON fragments in **`/usr/share/kitest/archinstall-examples/`** — merge **`packages`** into your saved **`archinstall`** configuration or pick the same names under **Additional packages** in the TUI.
 
-### Finding the persistence partition (auto-detect + `KITEST_PERSIST` fallback)
+### Finding the persistence partition (marker-first + `KITEST_PERSIST` fallback)
 
-Persistent boot now uses **`cow_autodetect=1`** plus **`cow_label=KITEST_PERSIST`** fallback. The initramfs hook auto-selects a writable Linux filesystem for the overlay when the fixed label is absent. Keeping a partition labeled **`KITEST_PERSIST`** is still recommended as an explicit fallback.
+Persistent boot now uses **`cow_autodetect=1`** with **`cow_marker=/kitest-persist.marker`** as the primary selector plus **`cow_label=KITEST_PERSIST`** fallback. This makes persistence deterministic across varying disk names and boot order.
 
 On any Linux system (host or live session), check labels:
 
@@ -176,7 +176,20 @@ sudo blkid | grep -i kitest
 ls -l /dev/disk/by-label/
 ```
 
-You should see a line like **`LABEL="KITEST_PERSIST"`** and a symlink **`/dev/disk/by-label/KITEST_PERSIST`** when using explicit label mode; otherwise auto-detect can still pick a suitable writable partition.
+Recommended: create both marker and label on your persistence filesystem.
+
+```bash
+sudo mkdir -p /mnt/kitest-persist
+sudo mount /dev/sdXN /mnt/kitest-persist
+sudo touch /mnt/kitest-persist/kitest-persist.marker
+sudo umount /mnt/kitest-persist
+```
+
+Label fallback is still accepted:
+
+```bash
+sudo e2label /dev/sdXN KITEST_PERSIST
+```
 
 ### USB flash drive
 
@@ -219,7 +232,7 @@ After the build:
 QEMU_PERSIST=1 ./qemu-smoke.sh out/*.iso
 ```
 
-This creates a raw ext4 image alongside the ISO (name `*.persist.img`) labeled **`KITEST_PERSIST`** and attaches it as a second virtio disk. For **clean testing**, the auto image is **recreated each run**; to keep state between boots, set `QEMU_PERSIST_KEEP=1`. Then select **Kitest OS - persistent live** in the firmware menu.
+This creates a raw ext4 image alongside the ISO (name `*.persist.img`), writes marker **`/kitest-persist.marker`**, labels it **`KITEST_PERSIST`**, and attaches it as a second virtio disk. For **clean testing**, the auto image is **recreated each run**; to keep state between boots, set `QEMU_PERSIST_KEEP=1`. Then select **Kitest OS - persistent live** in the firmware menu.
 
 If you still see a black screen in QEMU, try the OpenGL-backed device (often better for Plasma):
 
@@ -231,13 +244,13 @@ QEMU_GPU=virtio-gl QEMU_PERSIST=1 ./qemu-smoke.sh out/*.iso
 
 ```bash
 truncate -s 512M /tmp/kitest-persist.img
-mkfs.ext4 -L KITEST_PERSIST /tmp/kitest-persist.img
+mkfs.ext4 -F -L KITEST_PERSIST /tmp/kitest-persist.img
 QEMU_PERSIST_IMG=/tmp/kitest-persist.img ./qemu-smoke.sh out/*.iso
 ```
 
-Without that disk, use the default **live session** entry. If you see **overlayfs** / **root** errors with persistence, boot **live session** first and verify the extra disk label is **`KITEST_PERSIST`** (see `docs/troubleshooting-initramfs.md`).
+Without that disk, use the default **live session** entry. If you see **overlayfs** / **root** errors with persistence, boot **live session** first and verify marker and label on the extra disk (see `docs/troubleshooting-initramfs.md`).
 
-**Host AMD GPU (VFIO)** for driver testing: bind the card to `vfio-pci`, then e.g. `QEMU_VFIO_GPU=0000:0c:00.0 ./qemu-smoke.sh out/*.iso` or `QEMU_TRY_AMD_VFIO=1 ./qemu-smoke.sh …`. Guest video is on the **passed-through GPU** (not the virtio window).
+**Host AMD GPU (VFIO)** for driver testing: bind the card to `vfio-pci`, then e.g. `QEMU_VFIO_GPU=0000:0c:00.0 ./qemu-smoke.sh out/*.iso` or `QEMU_TRY_VFIO=1 ./qemu-smoke.sh …`. Guest video is on the **passed-through GPU** (not the virtio window).
 
 ### Proxmox VE (and similar libvirt/KVM UIs)
 
@@ -341,7 +354,7 @@ flowchart TD
 
 ### Bundling Catppuccin Kvantum themes into the ISO
 
-Bundling themes (default **on**) populates **`/usr/share/kvantum/themes/`** so the live session and **Kitten Theme Selector** work **offline**. With **`KITEST_BUNDLE_CATPPUCCIN_KVANTUM=0`**, only Breeze/Materia-style packages apply unless you install themes manually.
+Bundling themes (default **on**) populates **`/usr/share/kvantum/themes/`** so the live session and **Kitten Theme Selector** work **offline**. Default theme is **`catppuccin-mocha-mauve`** for both live and post-install.
 
 If you want to **disable** bundling (smaller build / no extra assets), build with:
 
@@ -373,6 +386,16 @@ printf '[General]\ntheme=catppuccin-mocha-mauve\n' > ~/.config/Kvantum/kvantum.k
 ```
 
 See [Catppuccin ports](https://catppuccin.com/ports/) for more.
+
+## Validation checklist
+
+Use this quick pass after each ISO build to keep live/install behavior aligned:
+
+- Boot default live entry and verify Catppuccin Kvantum is active (`qt5ct`/`qt6ct` style is `kvantum`, Kvantum theme is `catppuccin-mocha-mauve`).
+- Run **Install Kitest OS** and verify the installed system defaults to the same Catppuccin theme for newly created users.
+- Boot persistent live with a disk containing `/kitest-persist.marker` and confirm files persist across reboot.
+- Boot persistent live with marker removed but label `KITEST_PERSIST` present and confirm label fallback works.
+- Boot persistent live with neither marker nor label and confirm safe fallback (live boots but persistence is not attached).
 
 ## Build: mkinitcpio “Possibly missing firmware for module: …”
 

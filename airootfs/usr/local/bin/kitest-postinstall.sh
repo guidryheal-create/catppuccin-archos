@@ -10,6 +10,7 @@ KITEST_FLATPAK_EXTRA_APPS="${KITEST_FLATPAK_EXTRA_APPS:-com.daidouji.oneko}"
 KITEST_ENABLE_FLATHUB="${KITEST_ENABLE_FLATHUB:-1}"
 KITEST_INSTALL_DEFAULT_BUNDLE="${KITEST_INSTALL_DEFAULT_BUNDLE:-1}"
 KITEST_INSTALL_EXTRA_BUNDLE="${KITEST_INSTALL_EXTRA_BUNDLE:-1}"
+KITEST_DEFAULT_KVANTUM_THEME="${KITEST_DEFAULT_KVANTUM_THEME:-catppuccin-mocha-mauve}"
 
 echo "[kitest-postinstall] Installing required packages..."
 pacman -Sy --noconfirm --needed ${KITEST_REQUIRE_PACKAGES}
@@ -33,6 +34,26 @@ EOF
 install -d -m0755 /etc/skel/.config/environment.d
 cat >/etc/skel/.config/environment.d/99-qt.conf <<'EOF'
 QT_QPA_PLATFORMTHEME=qt6ct
+EOF
+
+install -d -m0755 /etc/skel/.config/Kvantum
+cat >/etc/skel/.config/Kvantum/kvantum.kvconfig <<EOF
+[General]
+theme=${KITEST_DEFAULT_KVANTUM_THEME}
+EOF
+
+install -d -m0755 /etc/skel/.config/qt5ct
+cat >/etc/skel/.config/qt5ct/qt5ct.conf <<'EOF'
+[Appearance]
+standard_dialogs=default
+style=kvantum
+EOF
+
+install -d -m0755 /etc/skel/.config/qt6ct
+cat >/etc/skel/.config/qt6ct/qt6ct.conf <<'EOF'
+[Appearance]
+standard_dialogs=default
+style=kvantum
 EOF
 
 echo "[kitest-postinstall] Done."

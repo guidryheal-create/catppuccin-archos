@@ -19,13 +19,14 @@ Kernel command lines in [`syslinux/archiso_sys-linux.cfg`](../syslinux/archiso_s
 Persistence adds:
 
 - **`cow_autodetect=1`** — initramfs hook can auto-select a writable Linux filesystem.
-- **`cow_label=KITEST_PERSIST`** — explicit fallback label for deterministic setups.
+- **`cow_marker=/kitest-persist.marker`** — primary deterministic selector.
+- **`cow_label=KITEST_PERSIST`** — explicit fallback label.
 
 Initramfs hooks are defined in [`airootfs/etc/mkinitcpio.conf.d/archiso.conf`](../airootfs/etc/mkinitcpio.conf.d/archiso.conf) (must include **`archiso`**, **`archiso_loop_mnt`**, etc.).
 
 ## Most likely causes
 
-1. **Persistence** — booting **“persistent live”** without a suitable writable Linux filesystem, or with a broken fallback label/device. **Test:** boot **“live session”** only (no persistence parameters). If that works, fix persistence layout/filesystem.
+1. **Persistence** — booting **“persistent live”** without a suitable writable Linux filesystem, missing marker file, or broken fallback label/device. **Test:** boot **“live session”** only (no persistence parameters). If that works, fix persistence layout/filesystem.
 2. **Bad / missing squashfs** — incomplete or corrupted ISO build; **`arch/x86_64/airootfs.sfs`** missing or truncated. **Test:** loop-mount the ISO and `ls arch/x86_64/*.sfs`.
 3. **Wrong or edited kernel cmdline** — if you edit GRUB/Syslinux and break **`archisosearchuuid`** or **`archisobasedir`**, the image will not be found.
 4. **Unreliable USB** — try **`copytoram`** on the kernel line (see [archiso boot parameters](https://gitlab.archlinux.org/archlinux/mkinitcpio/mkinitcpio-archiso/-/blob/master/docs/README.bootparams)).
@@ -36,6 +37,8 @@ Initramfs hooks are defined in [`airootfs/etc/mkinitcpio.conf.d/archiso.conf`](.
 | Check | What to do |
 |--------|------------|
 | Isolate persistence | Boot **live session**, not **persistent live**. |
+| Marker file | Mount persistence filesystem and verify **`/kitest-persist.marker`** exists at filesystem root. |
+| Label fallback | Verify **`/dev/disk/by-label/KITEST_PERSIST`** exists (`blkid`, `ls -l /dev/disk/by-label/`). |
 | ISO contents | Mount ISO: `ls arch/x86_64/` — expect **`airootfs.sfs`** (names may vary slightly; see upstream archiso). |
 | Kernel line | In firmware editor, confirm **`archisosearchuuid=...`** matches the **ISO partition UUID** (`blkid` on the USB stick’s first partition). |
 | Debug | Append **`rd.debug`** or use **`break=postmount`** (see archiso docs) to stop in initramfs. |

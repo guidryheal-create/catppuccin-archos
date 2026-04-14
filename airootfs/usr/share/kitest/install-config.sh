@@ -2,7 +2,8 @@
 # Deterministic defaults for hybrid install post-install phase.
 
 # Base packages always enforced after archinstall.
-KITEST_REQUIRE_PACKAGES="flatpak xorg-xrandr"
+KITEST_REQUIRE_PACKAGES="flatpak xorg-xrandr kvantum qt5ct qt6ct"
+KITEST_DEFAULT_KVANTUM_THEME="catppuccin-mocha-mauve"
 
 # Flatpak behavior: keep default bundle and add Kitest extra bundle.
 KITEST_ENABLE_FLATHUB=1

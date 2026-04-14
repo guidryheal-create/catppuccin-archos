@@ -1,9 +1,11 @@
 Kitest OS - persistent live overlay (USB)
 ==========================================
 
-This uses mkinitcpio-archiso with **cow_autodetect=1** and **cow_label=KITEST_PERSIST**
-fallback (see upstream boot parameter docs). It is **not** the installer: you still get **SDDM -> Plasma**
-like the default live entry; the only difference is where the overlay is stored.
+This uses mkinitcpio-archiso with **cow_autodetect=1** and marker-first selection
+(**cow_marker=/kitest-persist.marker**) with **cow_label=KITEST_PERSIST** fallback
+(see upstream boot parameter docs). It is **not** the installer: you still get
+**SDDM -> Plasma** like the default live entry; the only difference is where the
+overlay is stored.
 
 If you see **“failed to mount root device”** / **“can’t access TTY”**, that is an
 **initramfs** issue (ISO / squashfs / persistence), **not** desktop theming. On the
@@ -30,20 +32,24 @@ Quick setup (USB)
 
 2. Add a second partition on the same drive (e.g. ext4).
 
-3. Recommended: set filesystem label **exactly** (underscore between words):
+3. Recommended: create marker file at filesystem root:
+
+     /kitest-persist.marker
+
+4. Recommended fallback: set filesystem label **exactly** (underscore between words):
 
      KITEST_PERSIST
 
    Wrong: `KITEST-PERSIST` -- that is a **different** label and will not match
    the fallback **cow_label=KITEST_PERSIST**.
 
-4. Under Linux the device link looks like:
+5. Under Linux the device link looks like:
 
      /dev/disk/by-label/KITEST_PERSIST
 
    (If your tools show a hyphen, you used the wrong label.)
 
-5. Boot **"Kitest OS - persistent live (USB, ...)"** in the firmware menu.
+6. Boot **"Kitest OS - persistent live (USB, ...)"** in the firmware menu.
 
 6. Session changes are stored on that partition (overlay path follows archiso
    rules, typically under a `persistent_<ISO volume label>/`-style path on
@@ -59,7 +65,7 @@ Notes
 - Persistence needs a **writable** partition; DVD / read-only media cannot
   store the overlay.
 - **QEMU / Proxmox / libvirt:** same rule -- attach a **second** writable virtual disk.
-  Labeling it **KITEST_PERSIST** is recommended, but autodetect can use another suitable Linux filesystem.
+  Marker file is preferred; labeling **KITEST_PERSIST** remains the fallback.
   Otherwise use **live session** (see `README.md`).
 - **"Failed to mount root" / overlayfs errors:** boot **live session** first.
   If the extra disk is wrong format or label, **cow_label** can fail.
