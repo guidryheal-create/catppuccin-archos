@@ -1,0 +1,3 @@
+[submodule "airootfs/usr/local/kde"]
+	path = airootfs/usr/local/kde
+	url = https://github.com/catppuccin/kde.git
