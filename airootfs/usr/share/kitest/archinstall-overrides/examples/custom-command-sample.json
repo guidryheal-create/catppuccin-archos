@@ -1,0 +1,42 @@
+{
+  "script": "kitest_guided",
+  "hostname": "development-box",
+  "kernels": [
+    "linux-kitten-cachyos-hardened",
+    "linux"
+  ],
+  "locale_config": {
+    "kb_layout": "us",
+    "sys_enc": "UTF-8",
+    "sys_lang": "en_US"
+  },
+  "timezone": "Europe/Stockholm",
+  "ntp": true,
+  "profile_config": {
+    "gfx_driver": "All open-source",
+    "greeter": "sddm",
+    "profile": {
+      "main": "Desktop",
+      "details": [
+        "KDE Plasma"
+      ]
+    }
+  },
+  "services": [
+    "docker",
+    "flatpak-system-helper"
+  ],
+  "custom_commands": [
+    "if [ -x /usr/local/bin/kitest-postinstall.sh ]; then /usr/local/bin/kitest-postinstall.sh; fi",
+    "if [ -x /usr/local/bin/kitest-desktop-extras.sh ]; then /usr/local/bin/kitest-desktop-extras.sh; fi",
+    "usermod -aG docker devel"
+  ],
+  "kitest_flatpak": {
+    "enabled": true,
+    "remote_name": "flathub",
+    "remote_url": "https://flathub.org/repo/flathub.flatpakrepo",
+    "apps": [
+      "org.mozilla.firefox"
+    ]
+  }
+}

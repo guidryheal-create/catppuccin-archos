@@ -160,13 +160,16 @@ Rolling base, CI, and “do we fork Arch?” are summarized in [docs/devops.md](
 
 Boot order is always: **firmware (Syslinux / systemd-boot) → Linux → SDDM → Plasma session**.
 
-The installer is **[archinstall](https://wiki.archlinux.org/title/Archinstall)** (TUI), launched through a **hybrid wrapper** from the **Install Kitest OS** desktop icon. The wrapper runs `sudo archinstall` and then enforces the Kitest post-install profile in the installed target (`arch-chroot /mnt`). A **first-run** autostart script (**`kitest-live-first-run`**) configures Flathub and applies the configured Flatpak bundle(s) once per user (best-effort). If you only see a black screen, wait for **SDDM**, then log in as **`kitest`** (password **empty** / unset). If you changed the live user at build time, use `KITEST_LIVE_USER`’s value instead.
+The installer is **[archinstall](https://wiki.archlinux.org/title/Archinstall)** (TUI), launched from the **Install Kitest OS** desktop icon. The launcher runs Phase 1 only:
+`pacman-key --init` -> `pacman -Sy archinstall` -> `mount -a` -> `archinstall`.
+Post-install customization belongs to Phase 2 (inside the installed system). A **first-run** autostart script (**`kitest-live-first-run`**) applies KDE/Qt theme defaults and installs Flatpak apps in **user scope** (best-effort) for live testing. If you only see a black screen, wait for **SDDM**, then log in as **`kitest`** (password **empty** / unset). If you changed the live user at build time, use `KITEST_LIVE_USER`’s value instead.
 
 Optional package groups from the old Calamares netinstall are documented in **`/usr/share/kitest/netinstall-bundles.yaml`** and example JSON fragments in **`/usr/share/kitest/archinstall-examples/`** — merge **`packages`** into your saved **`archinstall`** configuration or pick the same names under **Additional packages** in the TUI.
 
-### Finding the persistence partition (marker-first + `KITEST_PERSIST` fallback)
+### Finding the persistence partition (`KITEST_PERSIST`)
 
-Persistent boot now uses **`cow_autodetect=1`** with **`cow_marker=/kitest-persist.marker`** as the primary selector plus **`cow_label=KITEST_PERSIST`** fallback. This makes persistence deterministic across varying disk names and boot order.
+Persistent boot uses **`cow_autodetect=1`** with explicit **`cow_label=KITEST_PERSIST`**.
+No initramfs marker scanning/mounting is done by Kitest hooks.
 
 On any Linux system (host or live session), check labels:
 
@@ -176,16 +179,7 @@ sudo blkid | grep -i kitest
 ls -l /dev/disk/by-label/
 ```
 
-Recommended: create both marker and label on your persistence filesystem.
-
-```bash
-sudo mkdir -p /mnt/kitest-persist
-sudo mount /dev/sdXN /mnt/kitest-persist
-sudo touch /mnt/kitest-persist/kitest-persist.marker
-sudo umount /mnt/kitest-persist
-```
-
-Label fallback is still accepted:
+Set the label directly:
 
 ```bash
 sudo e2label /dev/sdXN KITEST_PERSIST
@@ -232,7 +226,7 @@ After the build:
 QEMU_PERSIST=1 ./qemu-smoke.sh out/*.iso
 ```
 
-This creates a raw ext4 image alongside the ISO (name `*.persist.img`), writes marker **`/kitest-persist.marker`**, labels it **`KITEST_PERSIST`**, and attaches it as a second virtio disk. For **clean testing**, the auto image is **recreated each run**; to keep state between boots, set `QEMU_PERSIST_KEEP=1`. Then select **Kitest OS - persistent live** in the firmware menu.
+This creates a raw ext4 image alongside the ISO (name `*.persist.img`), labels it **`KITEST_PERSIST`**, and attaches it as a second virtio disk. For **clean testing**, the auto image is **recreated each run**; to keep state between boots, set `QEMU_PERSIST_KEEP=1`. Then select **Kitest OS - persistent live** in the firmware menu.
 
 If you still see a black screen in QEMU, try the OpenGL-backed device (often better for Plasma):
 
@@ -243,10 +237,12 @@ QEMU_GPU=virtio-gl QEMU_PERSIST=1 ./qemu-smoke.sh out/*.iso
 - **“Persistent live” in QEMU (manual):** if you want full control, attach a **second** virtio disk whose **filesystem** is labeled **`KITEST_PERSIST`**:
 
 ```bash
-truncate -s 512M /tmp/kitest-persist.img
+truncate -s 20G /tmp/kitest-persist.img
 mkfs.ext4 -F -L KITEST_PERSIST /tmp/kitest-persist.img
 QEMU_PERSIST_IMG=/tmp/kitest-persist.img ./qemu-smoke.sh out/*.iso
 ```
+
+Recommended persistence test disk size is **20G to 60G** (for real install/post-install testing).
 
 Without that disk, use the default **live session** entry. If you see **overlayfs** / **root** errors with persistence, boot **live session** first and verify marker and label on the extra disk (see `docs/troubleshooting-initramfs.md`).
 
@@ -263,7 +259,7 @@ Without that disk, use the default **live session** entry. If you see **overlayf
 
 ### archinstall / Konsole
 
-1. Use the **Install Kitest OS** launcher (recommended): it runs the hybrid flow (`sudo archinstall` + enforced Kitest post-install).
+1. Use the **Install Kitest OS** launcher (recommended): it runs Phase 1 prep + `archinstall`.
 2. You can still run **`archinstall`** manually for pure upstream behavior.
 3. If **`pacman-key`** / mirror errors appear inside **archinstall**, see [archinstall known issues](https://archinstall.readthedocs.io/en/latest/help/known_issues.html) (e.g. refresh **`archlinux-keyring`**).
 

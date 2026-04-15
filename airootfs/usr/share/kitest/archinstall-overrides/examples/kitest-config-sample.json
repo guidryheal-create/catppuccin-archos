@@ -1,0 +1,84 @@
+{
+  "script": "kitest_guided",
+  "hostname": "kitest-workstation",
+  "locale_config": {
+    "kb_layout": "us",
+    "sys_enc": "UTF-8",
+    "sys_lang": "en_US"
+  },
+  "timezone": "Europe/Stockholm",
+  "ntp": true,
+  "kernels": [
+    "linux-kitten-cachyos-hardened",
+    "linux"
+  ],
+  "bootloader_config": {
+    "bootloader": "Systemd-boot",
+    "uki": false,
+    "removable": false
+  },
+  "profile_config": {
+    "gfx_driver": "All open-source",
+    "greeter": "sddm",
+    "profile": {
+      "main": "Desktop",
+      "details": [
+        "KDE Plasma"
+      ]
+    }
+  },
+  "app_config": {
+    "bluetooth_config": {
+      "enabled": true
+    },
+    "audio_config": {
+      "audio": "pipewire"
+    },
+    "power_management_config": {
+      "power_management": "power-profiles-daemon"
+    },
+    "firewall_config": {
+      "firewall": "firewalld"
+    }
+  },
+  "packages": [
+    "flatpak",
+    "networkmanager",
+    "sddm",
+    "plasma-meta",
+    "plasma-x11-session",
+    "git",
+    "wget",
+    "curl",
+    "starship",
+    "fastfetch"
+  ],
+  "services": [
+    "NetworkManager",
+    "sddm",
+    "flatpak-system-helper",
+    "docker"
+  ],
+  "custom_commands": [
+    "if [ -x /usr/local/bin/kitest-postinstall.sh ]; then /usr/local/bin/kitest-postinstall.sh; fi",
+    "if [ -x /usr/local/bin/kitest-desktop-extras.sh ]; then /usr/local/bin/kitest-desktop-extras.sh; fi"
+  ],
+  "kitest_local_repo": {
+    "enabled": true,
+    "name": "kitten-local",
+    "path": "/var/tmp/kitest-localrepo"
+  },
+  "kitest_flatpak": {
+    "enabled": true,
+    "remote_name": "flathub",
+    "remote_url": "https://flathub.org/repo/flathub.flatpakrepo",
+    "apps": [
+      "org.mozilla.firefox",
+      "com.github.tchx84.Flatseal"
+    ]
+  },
+  "kitest_postinstall_commands": [
+    "systemctl enable NetworkManager",
+    "systemctl enable sddm"
+  ]
+}

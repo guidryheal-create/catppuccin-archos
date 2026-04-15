@@ -63,6 +63,7 @@ Notes
   store the overlay.
 - **QEMU / Proxmox / libvirt:** same rule -- attach a **second** writable virtual disk,
   format and label it **KITEST_PERSIST**, then boot the persistent entry.
+  For install testing, prefer **20G to 60G** persistence disks.
   Otherwise use **live session** (see `README.md`).
 - **"Failed to mount root" / overlayfs errors:** boot **live session** first.
   If the extra disk is wrong format or label, **cow_label** can fail.

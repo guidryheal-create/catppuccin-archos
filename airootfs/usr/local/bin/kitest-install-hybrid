@@ -5,6 +5,36 @@ log() {
   printf '[kitest-install] %s\n' "$*"
 }
 
+install_archinstall_overrides() {
+  local override_root="/usr/share/kitest/archinstall-overrides"
+  local py_site
+  local archinstall_dir
+
+  [[ -d "${override_root}" ]] || return 0
+
+  py_site="$(python3 - <<'PY'
+import importlib.util
+from pathlib import Path
+spec = importlib.util.find_spec("archinstall")
+if spec and spec.origin:
+    print(Path(spec.origin).parent)
+PY
+)"
+
+  [[ -n "${py_site}" ]] || return 0
+  archinstall_dir="${py_site}"
+
+  if [[ -f "${override_root}/archinstall/scripts/kitest_guided.py" ]]; then
+    install -d -m0755 "${archinstall_dir}/scripts"
+    install -m0644 "${override_root}/archinstall/scripts/kitest_guided.py" "${archinstall_dir}/scripts/kitest_guided.py"
+  fi
+
+  if [[ -f "${override_root}/archinstall/lib/pathnames.py" ]]; then
+    install -d -m0755 "${archinstall_dir}/lib"
+    install -m0644 "${override_root}/archinstall/lib/pathnames.py" "${archinstall_dir}/lib/pathnames.py"
+  fi
+}
+
 if [[ "${EUID}" -ne 0 ]]; then
   exec sudo -E /usr/local/bin/kitest-install-hybrid "$@"
 fi
@@ -21,6 +51,10 @@ command -v archinstall >/dev/null 2>&1 || {
   log "archinstall is not available."
   exit 1
 }
+command -v python3 >/dev/null 2>&1 || {
+  log "python3 is not available."
+  exit 1
+}
 
 log "Preparing pacman keyring for archinstall..."
 pacman-key --init >/dev/null 2>&1 || true
@@ -29,6 +63,16 @@ pacman-key --populate >/dev/null 2>&1 || true
 log "Refreshing installer packages (archlinux-keyring + archinstall)..."
 pacman -Sy --noconfirm --needed archlinux-keyring archinstall
 
-log "Phase 1 only: launching archinstall for clean disk install."
+log "Installing Kitest archinstall overrides..."
+install_archinstall_overrides
+
+log "Refreshing static mounts before installer..."
+mount -a >/dev/null 2>&1 || true
+
+if [[ "$#" -eq 0 ]]; then
+  set -- --script kitest_guided --config /usr/share/kitest/archinstall-overrides/examples/kitest-config-sample.json
+fi
+
+log "Phase 1 only: launching Kitest guided archinstall flow."
 log "Run Kitest post-install in Phase 2 after first boot into the installed OS."
 exec archinstall "$@"

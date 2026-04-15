@@ -2,6 +2,7 @@ alsa-utils
 amd-ucode
 arch-install-scripts
 archinstall
+core/util-linux
 base
 bcachefs-tools
 bind
@@ -44,7 +45,6 @@ ldns
 less
 lftp
 libfido2
-libsodium
 libusb-compat
 linux-atm
 linux-firmware
@@ -115,7 +115,7 @@ usbutils
 vim
 virtualbox-guest-utils-nox
 vpnc
-wpa_supplicant
+# wpa_supplicant NetworkManager
 wireless-regdb
 wireless_tools
 wvdial
@@ -126,9 +126,7 @@ xl2tpd
 zsh
 plasma-meta
 plasma-x11-session
-plasma-workspace
 networkmanager
-plasma-nm
 sddm
 sddm-kcm
 konsole
@@ -136,8 +134,6 @@ kdialog
 dolphin
 kio-extras
 ffmpegthumbs
-packagekit
-discover
 papirus-icon-theme
 kvantum
 kvantum-theme-materia
@@ -149,7 +145,6 @@ noto-fonts
 noto-fonts-emoji
 starship
 fastfetch
-flatpak
 xdg-desktop-portal
 xdg-desktop-portal-kde
 xdg-desktop-portal-gtk
@@ -164,5 +159,8 @@ pipewire
 pipewire-alsa
 pipewire-pulse
 wireplumber
+endeavouros-mirrorlist
+endeavouros-keyring
 linux-kitten-cachyos-hardened
+kpmcore
 b43-fwcutter

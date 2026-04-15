@@ -17,7 +17,7 @@ Environment:
 
   QEMU_PERSIST=1           auto-create/attach persistence disk (raw ext4, LABEL=KITEST_PERSIST)
   QEMU_PERSIST_IMG=...     path to persistence disk image (raw recommended; should include LABEL=KITEST_PERSIST)
-  QEMU_PERSIST_SIZE=8G     size when auto-creating (default: 8G)
+  QEMU_PERSIST_SIZE=32G    size when auto-creating (default: 32G; recommended range 20G-60G)
   QEMU_PERSIST_PATH=...    path when auto-creating (default: alongside ISO, *.persist.img)
   QEMU_PERSIST_KEEP=1      keep existing auto persistence image (default: recreate for clean testing)
   The filesystem label must be exactly KITEST_PERSIST (underscores; not KITTEN_PERSIST or KITEST-PERSIST).
@@ -199,12 +199,12 @@ if [[ -n "$persist_img" ]]; then
   fi
 
   if [[ $persist_enabled -eq 1 && ! -e "$persist_img" ]]; then
-    if ! mk_persist_img "$persist_img" "${QEMU_PERSIST_SIZE:-8G}"; then
+    if ! mk_persist_img "$persist_img" "${QEMU_PERSIST_SIZE:-32G}"; then
       # If ISO directory isn't writable (common when ISO owned by root), fall back to /tmp.
       persist_img="/tmp/${iso_base}.persist.img"
       persist_auto=1
       [[ "${QEMU_PERSIST_KEEP:-0}" != 1 ]] && rm -f -- "$persist_img"
-      mk_persist_img "$persist_img" "${QEMU_PERSIST_SIZE:-8G}"
+      mk_persist_img "$persist_img" "${QEMU_PERSIST_SIZE:-32G}"
     fi
   fi
 

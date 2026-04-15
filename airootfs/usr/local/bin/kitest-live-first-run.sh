@@ -11,18 +11,20 @@ mkdir -p "$(dirname "$mark")"
 if command -v /usr/local/bin/kitten-apply-catppuccin-kvantum >/dev/null 2>&1; then
   KITTEN_APPLY_NONINTERACTIVE=1 /usr/local/bin/kitten-apply-catppuccin-kvantum >/dev/null 2>&1 || true
 fi
+if command -v /usr/local/kde/install.sh >/dev/null 2>&1; then
+  /usr/local/kde/install.sh --base-defaults >/dev/null 2>&1 || true
+fi
 
 if [[ "${KITEST_OFFLINE:-0}" == "1" ]]; then
   touch "$mark"
   exit 0
 fi
 
-if command -v flatpak >/dev/null 2>&1 && command -v /usr/local/bin/kitest-desktop-extras.sh >/dev/null 2>&1; then
-  if [[ "$(id -u)" -eq 0 ]]; then
-    /usr/local/bin/kitest-desktop-extras.sh 2>/dev/null || true
-  else
-    sudo /usr/local/bin/kitest-desktop-extras.sh 2>/dev/null || true
+if command -v /usr/local/bin/kitest-desktop-extras.sh >/dev/null 2>&1; then
+  if ! command -v flatpak >/dev/null 2>&1; then
+    sudo pacman -Sy --noconfirm --needed flatpak xdg-desktop-portal xdg-desktop-portal-kde xdg-desktop-portal-gtk >/dev/null 2>&1 || true
   fi
+  /usr/local/bin/kitest-desktop-extras.sh 2>/dev/null || true
 fi
 
 touch "$mark"

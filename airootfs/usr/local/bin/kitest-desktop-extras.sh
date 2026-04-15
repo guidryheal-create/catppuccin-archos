@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Flathub: Brave (browser), Steam (games), Flatseal (Flatpak permissions).
-# GPU/userspace for Steam is carried by the Flatpak runtime, not multilib on the host.
+# Flathub apps in USER scope for live session reliability.
 # Re-run on the live ISO if the image was built offline.
 set -euo pipefail
 
@@ -14,15 +13,15 @@ KITEST_INSTALL_EXTRA_BUNDLE="${KITEST_INSTALL_EXTRA_BUNDLE:-1}"
 
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY all_proxy 2>/dev/null || true
 
-if ! flatpak remote-list --system 2>/dev/null | grep -q flathub; then
-  flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+if ! flatpak remote-list --user 2>/dev/null | grep -q flathub; then
+  flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 fi
 
 if [[ "${KITEST_INSTALL_DEFAULT_BUNDLE}" == "1" ]]; then
-  flatpak install -y --system --noninteractive flathub ${KITEST_FLATPAK_DEFAULT_APPS} || true
+  flatpak install -y --user --noninteractive flathub ${KITEST_FLATPAK_DEFAULT_APPS} || true
 fi
 if [[ "${KITEST_INSTALL_EXTRA_BUNDLE}" == "1" ]]; then
-  flatpak install -y --system --noninteractive flathub ${KITEST_FLATPAK_EXTRA_APPS} || true
+  flatpak install -y --user --noninteractive flathub ${KITEST_FLATPAK_EXTRA_APPS} || true
 fi
 
-update-desktop-database /var/lib/flatpak/exports/share/applications 2>/dev/null || true
+update-desktop-database "${HOME}/.local/share/flatpak/exports/share/applications" 2>/dev/null || true

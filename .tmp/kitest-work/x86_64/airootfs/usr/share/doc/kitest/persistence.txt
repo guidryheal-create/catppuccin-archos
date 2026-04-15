@@ -63,7 +63,8 @@ Notes
   store the overlay.
 - **QEMU / Proxmox / libvirt:** same rule -- attach a **second** virtual disk,
   format it with **mkfs.ext4 -L KITEST_PERSIST** (from the host or another VM),
-  then boot **persistent live**. Otherwise use **live session** (see `README.md`).
+  then boot **persistent live**. For install testing, prefer **20G to 60G**
+  disks. Otherwise use **live session** (see `README.md`).
 - **"Failed to mount root" / overlayfs errors:** boot **live session** first.
   If the extra disk is wrong format or label, **cow_label** can fail.
 - **"Failed to mount root" / initramfs:** see **initramfs-troubleshooting.txt** in
